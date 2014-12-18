@@ -61,7 +61,6 @@ showCurrentBoardRows (b:bs) (h:hs) =
 	case h of
 		'#' -> h:(showCurrentBoardRows bs hs)
 		' ' -> b:(showCurrentBoardRows bs hs)
-		_   -> h:(showCurrentBoardRows bs hs)
 
 showCurrentBoard :: [[Char]] -> [[Char]] -> [[Char]]
 showCurrentBoard [] [] = []
