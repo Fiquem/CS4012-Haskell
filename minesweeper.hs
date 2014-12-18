@@ -7,6 +7,7 @@ mine = 'o'
 noMine = '_'
 hidden = '#'
 revealed = ' '
+flagged = 'F'
 
 
 -- stolen from Stack Overflow (so)
@@ -45,7 +46,10 @@ initBoard (x,y) = (initRow y):(initBoard ((x-1),y))
 -- User chooses tile to uncover
 uncoverTileRow :: [Char] -> Int -> [Char]
 uncoverTileRow [] _ = []
-uncoverTileRow (rowx:rowxs) 1 = revealed:rowxs
+uncoverTileRow (rowx:rowxs) 1 = 
+	case rowx of
+		'F' -> rowx:rowxs
+		_	-> revealed:rowxs
 uncoverTileRow (rowx:rowxs) x = rowx:(uncoverTileRow rowxs (x-1))
 
 uncoverTile :: [[Char]] -> (Int,Int) -> [[Char]]
@@ -60,6 +64,7 @@ showCurrentBoardRows [] [] = []
 showCurrentBoardRows (b:bs) (h:hs) = 
 	case h of
 		'#' -> h:(showCurrentBoardRows bs hs)
+		'F' -> h:(showCurrentBoardRows bs hs)
 		' ' -> b:(showCurrentBoardRows bs hs)
 
 showCurrentBoard :: [[Char]] -> [[Char]] -> [[Char]]
@@ -199,6 +204,28 @@ buncoverTile board hidden (a,b) (x,y) = do
 		else revealedBoard
 --
 
+-- Flag/unflag a hidden tile
+flagRow :: [Char] -> Int -> [Char]
+flagRow [] _ = []
+flagRow (rowx:rowxs) 1 = flagged:rowxs
+flagRow (rowx:rowxs) x = rowx:(flagRow rowxs (x-1))
+
+flag :: [[Char]] -> (Int,Int) -> [[Char]]
+flag [] (_,_) = []
+flag (boardx:boardxs) (1,y) = (flagRow boardx y):boardxs
+flag (boardx:boardxs) (x,y) = boardx:(flag boardxs ((x-1),y))
+
+unflagRow :: [Char] -> Int -> [Char]
+unflagRow [] _ = []
+unflagRow (rowx:rowxs) 1 = hidden:rowxs
+unflagRow (rowx:rowxs) x = rowx:(unflagRow rowxs (x-1))
+
+unflag :: [[Char]] -> (Int,Int) -> [[Char]]
+unflag [] (_,_) = []
+unflag (boardx:boardxs) (1,y) = (unflagRow boardx y):boardxs
+unflag (boardx:boardxs) (x,y) = boardx:(unflag boardxs ((x-1),y))
+--
+
 main :: IO()
 main = do
 	g <- newStdGen -- so
@@ -207,7 +234,9 @@ main = do
 		[[(listArray ((0,0),(9,9)) ( myRands g ) :: Array (Int,Int) Int) -- so
 		! (x, y) | x <- [0..9]] | y <- [0..9]] -- so
 	let numbersBoard = computeNumbersFirst minesBoard (10,10)
-	let revealedBoard = buncoverTile numbersBoard hiddenBoard (10,10) (1,1)
+	let flaggedBoard = flag hiddenBoard (5,5)
+	let unflaggedBoard = unflag flaggedBoard (5,5)
+	let revealedBoard = buncoverTile numbersBoard unflaggedBoard (10,10) (1,1)
 	let currentBoard = showCurrentBoard numbersBoard revealedBoard
 	-- putStrLn $ printArray img
 	-- putStrLn $ unlines $ minesBoard
