@@ -61,6 +61,7 @@ showCurrentBoardRows (b:bs) (h:hs) =
 	case h of
 		'#' -> h:(showCurrentBoardRows bs hs)
 		' ' -> b:(showCurrentBoardRows bs hs)
+		_   -> h:(showCurrentBoardRows bs hs)
 
 showCurrentBoard :: [[Char]] -> [[Char]] -> [[Char]]
 showCurrentBoard [] [] = []
@@ -125,6 +126,81 @@ computeNumbersFirst (b0:b1:bs) (x,y) =
 	(computeNumbersRowsFirst (makeStr '_' y) b0 b1 y):(computeNumbers (b0:b1:bs) ((x-1),y))
 --
 
+-- Uncover all tiles adjacent to non-numbered tiles
+findTileRow :: [Char] -> Int -> Char
+findTileRow (rowx:rowxs) 1 = rowx
+findTileRow (rowx:rowxs) x = findTileRow rowxs (x-1)
+
+findTile :: [[Char]] -> (Int,Int) -> Char
+findTile (boardx:boardxs) (1,y) = findTileRow boardx y
+findTile (boardx:boardxs) (x,y) = findTile boardxs ((x-1),y)
+
+buncoverTile :: [[Char]] -> [[Char]] -> (Int,Int) -> (Int,Int) -> [[Char]]
+buncoverTile board hidden (a,b) (x,y) = do
+	revealedBoard <- [uncoverTile hidden (x,y)]
+	if findTile board (x,y) == '_'
+		then
+			if x == 1 && y == 1	then do
+				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y+1))]
+				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x+1),(y+1))]
+				buncoverTile board revealedBoard'' (a,b) ((x+1),y)
+			else
+			if x == 1 && y == b	then do
+				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y-1))]
+				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x+1),(y-1))]
+				buncoverTile board revealedBoard'' (a,b) ((x+1),y)
+			else
+			if x == 1 then do
+				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y+1))]
+				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x+1),(y+1))]
+				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) ((x+1),y)]
+				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) ((x+1),(y-1))]
+				buncoverTile board revealedBoard'''' (a,b) (x,(y-1))
+			-- I'm actually really sorry about this but I don't know what else to do
+			else
+			if x == a && y == 1 then do
+				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y+1))]
+				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),(y+1))]
+				buncoverTile board revealedBoard'' (a,b) ((x-1),y)
+			else
+			if x == a && y == b	then do
+				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y-1))]
+				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),(y-1))]
+				buncoverTile board revealedBoard'' (a,b) ((x-1),y)
+			else
+			if x == a then do
+				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y+1))]
+				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),(y+1))]
+				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) ((x-1),y)]
+				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) ((x-1),(y-1))]
+				buncoverTile board revealedBoard'''' (a,b) (x,(y-1))
+			else
+			if y == 1 then do
+				revealedBoard' <- [buncoverTile board revealedBoard (a,b) ((x-1),y)]
+				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),(y+1))]
+				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) (x,(y+1))]
+				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) ((x+1),(y+1))]
+				buncoverTile board revealedBoard'''' (a,b) ((x+1),y)
+			else
+			if y == b then do
+				revealedBoard' <- [buncoverTile board revealedBoard (a,b) ((x-1),y)]
+				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),(y-1))]
+				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) (x,(y-1))]
+				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) ((x+1),(y-1))]
+				buncoverTile board revealedBoard'''' (a,b) ((x+1),y)
+			else do
+				revealedBoard' <- [buncoverTile board revealedBoard (a,b) ((x-1),(y-1))]
+				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),y)]
+				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) ((x-1),(y+1))]
+				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) (x,(y-1))]
+				revealedBoard''''' <- [buncoverTile board revealedBoard'''' (a,b) (x,y)]
+				revealedBoard'''''' <- [buncoverTile board revealedBoard''''' (a,b) (x,(y+1))]
+				revealedBoard''''''' <- [buncoverTile board revealedBoard'''''' (a,b) ((x+1),(y-1))]
+				revealedBoard'''''''' <- [buncoverTile board revealedBoard''''''' (a,b) ((x+1),y)]
+				buncoverTile board revealedBoard''''' (a,b) ((x+1),(y+1))
+		else revealedBoard
+--
+
 main :: IO()
 main = do
 	g <- newStdGen -- so
@@ -133,11 +209,12 @@ main = do
 		[[(listArray ((0,0),(9,9)) ( myRands g ) :: Array (Int,Int) Int) -- so
 		! (x, y) | x <- [0..9]] | y <- [0..9]] -- so
 	let numbersBoard = computeNumbersFirst minesBoard (10,10)
-	let revealedBoard = uncoverTile hiddenBoard (1,1)
-	let currentBoard = showCurrentBoard minesBoard revealedBoard
+	-- let revealedBoard = uncoverTile hiddenBoard (1,1)
+	let revealedBoard = buncoverTile numbersBoard hiddenBoard (5,5) (1,1)
+	let currentBoard = showCurrentBoard numbersBoard revealedBoard
 	-- putStrLn $ printArray img
 	putStrLn $ unlines $ minesBoard
 	putStrLn $ unlines $ hiddenBoard
-	putStrLn $ unlines $ revealedBoard
+	-- putStrLn $ unlines $ revealedBoard
 	putStrLn $ unlines $ currentBoard
 	putStrLn $ unlines $ numbersBoard
