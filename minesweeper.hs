@@ -13,7 +13,7 @@ revealed = ' '
 -- NOT THE TYPE THO I DID THAT MYSELF ^___^
 printArray :: Array (Int,Int) Int -> [Char]
 printArray arr =
-	unlines [unwords [show (arr ! (x, y)) | x <- [0..5]] | y <- [0..5]]
+	unlines [unwords [show (arr ! (x, y)) | x <- [0..6]] | y <- [0..6]]
 
 myRands :: RandomGen g => g -> [Int]
 myRands g = randomRs (0,5) g
@@ -75,7 +75,7 @@ makeStr x n = x:(makeStr x (n-1))
 
 sumAdj :: Char -> Char -> Char -> Char -> Char -> Char -> Char -> Char -> Char
 sumAdj a b c d e f g h
-	| sum == 8*zero				= '0'
+	| sum == 8*zero				= '_'
 	| sum == (7*zero)+one		= '1'
 	| sum == (6*zero)+(2*one)	= '2'
 	| sum == (5*zero)+(3*one)	= '3'
@@ -85,25 +85,33 @@ sumAdj a b c d e f g h
 	| sum == (1*zero)+(7*one)	= '7'
 	| otherwise					= '8'
 	where 
-	sum = ord a + ord b + ord c + ord d + ord e + ord f + ord g + ord g
+	sum = ord a + ord b + ord c + ord d + ord e + ord f + ord g + ord h
 	zero = ord '_'
 	one = ord 'o'
 
+--	a b c
+--	d ? e
+--	f g h
+
 computeNumbersRows :: [Char] -> [Char] -> [Char] -> Int -> [Char]
 computeNumbersRows _ _ _ 0 = []
+computeNumbersRows _ (_:'o':_) _ 1 = ['o']
 computeNumbersRows (a0:a1:as) (b0:b1:bs) (c0:c1:cs) 1 = [sumAdj a0 a1 '_' b0 '_' c0 c1 '_']
 computeNumbersRows (a0:a1:as) (_:'o':bs) (c0:c1:cs) y = 
 	'o':(computeNumbersRows (a1:as) ('o':bs) (c1:cs) (y-1))
 computeNumbersRows (a0:a1:a2:as) (b0:b1:b2:bs) (c0:c1:c2:cs) y = 
-	(sumAdj a0 a1 a2 b0 b1 c0 c1 c2):(computeNumbersRows (a1:as) (b1:bs) (c1:cs) (y-1))
+	(sumAdj a0 a1 a2 b0 b2 c0 c1 c2):(computeNumbersRows (a1:a2:as) (b1:b2:bs) (c1:c2:cs) (y-1))
+computeNumbersRows a b c y = " "++[intToDigit y]++" "++a++" "++b++" "++c
 
 computeNumbersRowsFirst :: [Char] -> [Char] -> [Char] -> Int -> [Char]
 computeNumbersRowsFirst _ _ _ 0 = []
+computeNumbersRowsFirst _ ('o':_) _ 1 = ['o']
 computeNumbersRowsFirst (a:as) (b:bs) (c:cs) 1 = [sumAdj '_' a '_' '_' '_' '_' c '_']
 computeNumbersRowsFirst (a0:as) ('o':bs) (c0:cs) y = 
 	'o':(computeNumbersRows (a0:as) ('o':bs) (c0:cs) (y-1))
 computeNumbersRowsFirst (a0:a1:as) (b0:b1:bs) (c0:c1:cs) y = 
 	(sumAdj '_' a0 a1 '_' b1 '_' c0 c1):(computeNumbersRows (a0:a1:as) (b0:b1:bs) (c0:c1:cs) (y-1))
+computeNumbersRowsFirst a b c y = " "++[intToDigit y]++" "++a++" "++b++" "++c
 
 computeNumbers :: [[Char]] -> (Int,Int) -> [[Char]]
 computeNumbers _ (0,_) = []
@@ -120,11 +128,11 @@ computeNumbersFirst (b0:b1:bs) (x,y) =
 main :: IO()
 main = do
 	g <- newStdGen -- so
-	let hiddenBoard = initBoard (5,5)
+	let hiddenBoard = initBoard (10,10)
 	let minesBoard = convertToField 
-		[[(listArray ((0,0),(4,4)) ( myRands g ) :: Array (Int,Int) Int) -- so
-		! (x, y) | x <- [0..4]] | y <- [0..4]] -- so
-	--let numbersBoard = computeNumbersFirst minesBoard (5,5)
+		[[(listArray ((0,0),(9,9)) ( myRands g ) :: Array (Int,Int) Int) -- so
+		! (x, y) | x <- [0..9]] | y <- [0..9]] -- so
+	let numbersBoard = computeNumbersFirst minesBoard (10,10)
 	let revealedBoard = uncoverTile hiddenBoard (1,1)
 	let currentBoard = showCurrentBoard minesBoard revealedBoard
 	-- putStrLn $ printArray img
@@ -132,4 +140,4 @@ main = do
 	putStrLn $ unlines $ hiddenBoard
 	putStrLn $ unlines $ revealedBoard
 	putStrLn $ unlines $ currentBoard
-	--putStrLn $ unlines $ numbersBoard
+	putStrLn $ unlines $ numbersBoard
