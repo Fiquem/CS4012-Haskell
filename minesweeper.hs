@@ -17,7 +17,7 @@ printArray arr =
 	unlines [unwords [show (arr ! (x, y)) | x <- [0..6]] | y <- [0..6]]
 
 myRands :: RandomGen g => g -> [Int]
-myRands g = randomRs (0,5) g
+myRands g = randomRs (0,15) g
 --
 
 -- Build initial revealed board from given, random input
@@ -226,6 +226,30 @@ unflag (boardx:boardxs) (1,y) = (unflagRow boardx y):boardxs
 unflag (boardx:boardxs) (x,y) = boardx:(unflag boardxs ((x-1),y))
 --
 
+-- Endgame conditions
+isLoseRow :: [Char] -> [Char] -> Bool
+isLoseRow [] [] = False
+isLoseRow (b:bs) (h:hs) = 
+	if h == revealed && b == mine
+		then True
+		else isLoseRow bs hs
+
+isLose :: [[Char]] -> [[Char]] -> Bool
+isLose [] [] = False
+isLose (b:bs) (h:hs) = isLoseRow b h || isLose bs hs
+
+isWinRow :: [Char] -> [Char] -> Bool
+isWinRow [] [] = True
+isWinRow (b:bs) (h:hs) = 
+	if (h == revealed && b /= mine) || (h /= revealed && b == mine)
+		then isWinRow bs hs
+		else False
+
+isWin :: [[Char]] -> [[Char]] -> Bool
+isWin [] [] = True
+isWin (b:bs) (h:hs) = isWinRow b h && isWin bs hs
+--
+
 main :: IO()
 main = do
 	g <- newStdGen -- so
@@ -244,3 +268,5 @@ main = do
 	-- putStrLn $ unlines $ revealedBoard
 	putStrLn $ unlines $ currentBoard
 	putStrLn $ unlines $ numbersBoard
+	print (isLose numbersBoard revealedBoard)
+	print (isWin numbersBoard revealedBoard)
