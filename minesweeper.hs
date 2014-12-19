@@ -1,5 +1,6 @@
 
 import System.Random
+import System.IO
 import Data.Array.IArray
 import Data.Char
 import Data.List.Split
@@ -251,21 +252,16 @@ isWin [] [] = True
 isWin (b:bs) (h:hs) = isWinRow b h && isWin bs hs
 --
 
-main :: IO()
-main = do
-	-- Game setup
-	g <- newStdGen -- so
-	let hiddenBoard = initBoard (10,10)
-	let minesBoard = convertToField 
-		[[(listArray ((0,0),(9,9)) ( myRands g ) :: Array (Int,Int) Int) -- so
-		! (x, y) | x <- [0..9]] | y <- [0..9]] -- so
-	let numbersBoard = computeNumbersFirst minesBoard (10,10)
-
-	-- User prompt
+-- Play the game!
+playGame :: [[Char]] -> [[Char]] -> IO [Char]
+playGame board revealedBoard = do
+	-- Show game state
+	let currentBoard = showCurrentBoard board revealedBoard
 	putStrLn ""
 	putStrLn "Current Board"
-	putStrLn $ unlines $ hiddenBoard
-	putStrLn ""
+	putStrLn $ unlines $ currentBoard
+
+	-- User prompt
 	putStrLn "Enter coordinates to uncover in format: action x y"
 	putStrLn "Actions: flag unflag uncover"
 	putStrLn "Indexed from 1"
@@ -277,22 +273,33 @@ main = do
 	let action = (coords' !! 0)
 	let x = read (coords' !! 1) :: Int
 	let y = read (coords' !! 2) :: Int
+	putStrLn ""
 
 	-- Make a move
-	let revealedBoard =	case action of
+	let revealedBoard' =	case action of
 		"uncover"	->	do
-			buncoverTile numbersBoard hiddenBoard (10,10) (x,y)
+			buncoverTile board revealedBoard (10,10) (x,y)
 		"flag"		->	do
-			flag hiddenBoard (x,y)
+			flag revealedBoard (x,y)
 		otherwise	->	do
-			unflag hiddenBoard (x,y)
-	let currentBoard = showCurrentBoard numbersBoard revealedBoard
+			unflag revealedBoard (x,y)
 
-	-- Show game state
-	putStrLn "Current Board"
-	putStrLn $ unlines $ currentBoard
-	if (isLose numbersBoard revealedBoard) then print "LOSE"
-	else print "NO LOSE"
-	if (isWin numbersBoard revealedBoard) then print "WIN"
-	else print "NO WIN"
-	putStrLn ""
+	-- Detect endgame or repeat
+	if (isLose board revealedBoard') then return "LOSE"
+	else if (isWin board revealedBoard') then return "WIN"
+	else playGame board revealedBoard'
+--
+
+main :: IO()
+main = do
+	-- Game setup
+	g <- newStdGen -- so
+	let hiddenBoard = initBoard (10,10)
+	let minesBoard = convertToField 
+		[[(listArray ((0,0),(9,9)) ( myRands g ) :: Array (Int,Int) Int) -- so
+		! (x, y) | x <- [0..9]] | y <- [0..9]] -- so
+	let numbersBoard = computeNumbersFirst minesBoard (10,10)
+
+	do
+		result <- playGame numbersBoard hiddenBoard
+		putStrLn result
