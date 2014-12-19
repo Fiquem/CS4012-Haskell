@@ -1,6 +1,5 @@
 
 import System.Random
-import System.IO
 import Data.Array.IArray
 import Data.Char
 import Data.List.Split
@@ -214,8 +213,14 @@ flagRow (rowx:rowxs) x = rowx:(flagRow rowxs (x-1))
 
 flag :: [[Char]] -> (Int,Int) -> [[Char]]
 flag [] (_,_) = []
-flag (boardx:boardxs) (1,y) = (flagRow boardx y):boardxs
-flag (boardx:boardxs) (x,y) = boardx:(flag boardxs ((x-1),y))
+flag (boardx:boardxs) (1,y) = 
+	if findTile (boardx:boardxs) (1,y) == '#'
+		then (flagRow boardx y):boardxs
+		else (boardx:boardxs)
+flag (boardx:boardxs) (x,y) = 
+	if findTile (boardx:boardxs) (x,y) == '#'
+		then boardx:(flag boardxs ((x-1),y))
+		else (boardx:boardxs)	
 
 unflagRow :: [Char] -> Int -> [Char]
 unflagRow [] _ = []
@@ -224,8 +229,14 @@ unflagRow (rowx:rowxs) x = rowx:(unflagRow rowxs (x-1))
 
 unflag :: [[Char]] -> (Int,Int) -> [[Char]]
 unflag [] (_,_) = []
-unflag (boardx:boardxs) (1,y) = (unflagRow boardx y):boardxs
-unflag (boardx:boardxs) (x,y) = boardx:(unflag boardxs ((x-1),y))
+unflag (boardx:boardxs) (1,y) = 
+	if findTile (boardx:boardxs) (1,y) == 'F'
+		then (unflagRow boardx y):boardxs
+		else (boardx:boardxs)
+unflag (boardx:boardxs) (x,y) = 
+	if findTile (boardx:boardxs) (x,y) == 'F'
+		then boardx:(unflag boardxs ((x-1),y))
+		else (boardx:boardxs)
 --
 
 -- Endgame conditions
