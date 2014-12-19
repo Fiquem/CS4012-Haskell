@@ -282,8 +282,8 @@ playGame board revealedBoard = do
 	coords <- getLine
 	let coords' = splitOn " " coords
 	let action = (coords' !! 0)
-	let x = read (coords' !! 1) :: Int
-	let y = read (coords' !! 2) :: Int
+	let x = read (coords' !! 2) :: Int
+	let y = read (coords' !! 1) :: Int
 	putStrLn ""
 
 	-- Make a move
@@ -311,6 +311,7 @@ main = do
 		! (x, y) | x <- [0..9]] | y <- [0..9]] -- so
 	let numbersBoard = computeNumbersFirst minesBoard (10,10)
 
+	-- Play game!
 	do
 		result <- playGame numbersBoard hiddenBoard
 		putStrLn result
