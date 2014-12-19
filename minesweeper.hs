@@ -2,6 +2,7 @@
 import System.Random
 import Data.Array.IArray
 import Data.Char
+import Data.List.Split
 
 mine = 'o'
 noMine = '_'
@@ -252,21 +253,46 @@ isWin (b:bs) (h:hs) = isWinRow b h && isWin bs hs
 
 main :: IO()
 main = do
+	-- Game setup
 	g <- newStdGen -- so
 	let hiddenBoard = initBoard (10,10)
 	let minesBoard = convertToField 
 		[[(listArray ((0,0),(9,9)) ( myRands g ) :: Array (Int,Int) Int) -- so
 		! (x, y) | x <- [0..9]] | y <- [0..9]] -- so
 	let numbersBoard = computeNumbersFirst minesBoard (10,10)
-	let flaggedBoard = flag hiddenBoard (5,5)
-	let unflaggedBoard = unflag flaggedBoard (5,5)
-	let revealedBoard = buncoverTile numbersBoard unflaggedBoard (10,10) (1,1)
+
+	-- User prompt
+	putStrLn ""
+	putStrLn "Current Board"
+	putStrLn $ unlines $ hiddenBoard
+	putStrLn ""
+	putStrLn "Enter coordinates to uncover in format: action x y"
+	putStrLn "Actions: flag unflag uncover"
+	putStrLn "Indexed from 1"
+	putStrLn ""
+
+	-- User input
+	coords <- getLine
+	let coords' = splitOn " " coords
+	let action = (coords' !! 0)
+	let x = read (coords' !! 1) :: Int
+	let y = read (coords' !! 2) :: Int
+
+	-- Make a move
+	let revealedBoard =	case action of
+		"uncover"	->	do
+			buncoverTile numbersBoard hiddenBoard (10,10) (x,y)
+		"flag"		->	do
+			flag hiddenBoard (x,y)
+		otherwise	->	do
+			unflag hiddenBoard (x,y)
 	let currentBoard = showCurrentBoard numbersBoard revealedBoard
-	-- putStrLn $ printArray img
-	-- putStrLn $ unlines $ minesBoard
-	-- putStrLn $ unlines $ hiddenBoard
-	-- putStrLn $ unlines $ revealedBoard
+
+	-- Show game state
+	putStrLn "Current Board"
 	putStrLn $ unlines $ currentBoard
-	putStrLn $ unlines $ numbersBoard
-	print (isLose numbersBoard revealedBoard)
-	print (isWin numbersBoard revealedBoard)
+	if (isLose numbersBoard revealedBoard) then print "LOSE"
+	else print "NO LOSE"
+	if (isWin numbersBoard revealedBoard) then print "WIN"
+	else print "NO WIN"
+	putStrLn ""
