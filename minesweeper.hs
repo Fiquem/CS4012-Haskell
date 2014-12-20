@@ -88,7 +88,7 @@ makeStr x n = x:(makeStr x (n-1))
 
 sumAdj :: Char -> Char -> Char -> Char -> Char -> Char -> Char -> Char -> Char
 sumAdj a b c d e f g h
-	| sum == 8*zero				= '_'
+	| sum == 8*zero				= noMine
 	| sum == (7*zero)+one		= '1'
 	| sum == (6*zero)+(2*one)	= '2'
 	| sum == (5*zero)+(3*one)	= '3'
@@ -99,8 +99,8 @@ sumAdj a b c d e f g h
 	| otherwise					= '8'
 	where 
 	sum = ord a + ord b + ord c + ord d + ord e + ord f + ord g + ord h
-	zero = ord '_'
-	one = ord 'o'
+	zero = ord noMine
+	one = ord mine
 
 --	a b c
 --	d ? e
@@ -273,12 +273,6 @@ isWin (b:bs) (h:hs) = isWinRow b h && isWin bs hs
 -- Play the game!
 playGame :: InternalBoard -> PlayerBoard -> Difficulty -> IO [Char]
 playGame board revealedBoard difficulty = do
-	-- Show game state
-	let currentBoard = showCurrentBoard board revealedBoard
-	putStrLn ""
-	putStrLn "Current Board"
-	putStrLn $ unlines $ currentBoard
-
 	-- User prompt
 	putStrLn "Enter coordinates to uncover in format: action x y"
 	putStrLn "Actions: flag unflag uncover"
@@ -302,6 +296,12 @@ playGame board revealedBoard difficulty = do
 			flag revealedBoard (x,y)
 		otherwise	->	do
 			unflag revealedBoard (x,y)
+
+	-- Show game state
+	let currentBoard = showCurrentBoard board revealedBoard'
+	putStrLn ""
+	putStrLn "Current Board"
+	putStrLn $ unlines $ currentBoard
 
 	-- Detect endgame or repeat
 	if (isLose board revealedBoard') then return "LOSE"
@@ -360,8 +360,13 @@ main :: IO()
 main = do
 	-- Game setup
 	gen <- getStdGen -- random number generator seed
-	let difficulty = expert
+	let difficulty = intermediate
 	let hiddenBoard = initBoard (rows difficulty,cols difficulty)
+
+	putStrLn ""
+	putStrLn "Current Board"
+	putStrLn $ unlines $ hiddenBoard
+	
 	let minesBoard = generateRandomBoard gen difficulty
 	let numbersBoard = computeNumbersFirst minesBoard (rows difficulty,cols difficulty)
 
