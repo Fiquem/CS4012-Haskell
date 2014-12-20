@@ -3,23 +3,30 @@ import System.Random
 import Data.Array.IArray
 import Data.Char
 import Data.List.Split
+import Data.Function (on)
+import Data.List (sortBy, groupBy) 
+import Test.QuickCheck
 
 mine = 'o'
 noMine = '_'
+
 hidden = '#'
 revealed = ' '
 flagged = 'F'
 
+data Difficulty = Difficulty { rows :: Int
+							 , cols :: Int
+							 , mines :: Int
+							 } deriving (Show)
+type InternalBoard = [[Char]]
+type PlayerBoard = [[Char]]
 
--- stolen from Stack Overflow (so)
--- NOT THE TYPE THO I DID THAT MYSELF ^___^
-printArray :: Array (Int,Int) Int -> [Char]
-printArray arr =
-	unlines [unwords [show (arr ! (x, y)) | x <- [0..6]] | y <- [0..6]]
 
-myRands :: RandomGen g => g -> [Int]
-myRands g = randomRs (0,15) g
---
+easy = Difficulty 10 10 10 -- test
+
+beginner = Difficulty 9 9 10
+intermediate = Difficulty 16 16 40
+expert = Difficulty 16 30 99
 
 -- Build initial revealed board from given, random input
 convertToFieldRow :: [Int] -> [Char]
@@ -29,7 +36,7 @@ convertToFieldRow (x:xs) =
 		0 -> mine:(convertToFieldRow xs)
 		_ -> noMine:(convertToFieldRow xs)
 
-convertToField :: [[Int]] -> [[Char]]
+convertToField :: [[Int]] -> InternalBoard
 convertToField [] = []
 convertToField (x:xs) = (convertToFieldRow x):(convertToField xs)
 --
@@ -39,7 +46,7 @@ initRow :: Int -> [Char]
 initRow 0 = []
 initRow x = hidden:(initRow (x-1))
 
-initBoard :: (Int,Int) -> [[Char]]
+initBoard :: (Int,Int) -> PlayerBoard
 initBoard (0,_) = []
 initBoard (x,y) = (initRow y):(initBoard ((x-1),y))
 --
@@ -53,7 +60,7 @@ uncoverTileRow (rowx:rowxs) 1 =
 		_	-> revealed:rowxs
 uncoverTileRow (rowx:rowxs) x = rowx:(uncoverTileRow rowxs (x-1))
 
-uncoverTile :: [[Char]] -> (Int,Int) -> [[Char]]
+uncoverTile :: PlayerBoard -> (Int,Int) -> PlayerBoard
 uncoverTile [] (_,_) = []
 uncoverTile (boardx:boardxs) (1,y) = (uncoverTileRow boardx y):boardxs
 uncoverTile (boardx:boardxs) (x,y) = boardx:(uncoverTile boardxs ((x-1),y))
@@ -68,7 +75,7 @@ showCurrentBoardRows (b:bs) (h:hs) =
 		'F' -> h:(showCurrentBoardRows bs hs)
 		' ' -> b:(showCurrentBoardRows bs hs)
 
-showCurrentBoard :: [[Char]] -> [[Char]] -> [[Char]]
+showCurrentBoard :: InternalBoard -> PlayerBoard -> [[Char]]
 showCurrentBoard [] [] = []
 showCurrentBoard (b:bs) (h:hs) = (showCurrentBoardRows b h):(showCurrentBoard bs hs)
 --
@@ -119,12 +126,12 @@ computeNumbersRowsFirst (a0:a1:as) (b0:b1:bs) (c0:c1:cs) y =
 	(sumAdj '_' a0 a1 '_' b1 '_' c0 c1):(computeNumbersRows (a0:a1:as) (b0:b1:bs) (c0:c1:cs) (y-1))
 computeNumbersRowsFirst a b c y = " "++[intToDigit y]++" "++a++" "++b++" "++c
 
-computeNumbers :: [[Char]] -> (Int,Int) -> [[Char]]
+computeNumbers :: InternalBoard -> (Int,Int) -> InternalBoard
 computeNumbers _ (0,_) = []
 computeNumbers (b0:b1:bs) (1,y) = [computeNumbersRowsFirst b0 b1 (makeStr '_' y) y]
 computeNumbers (b0:b1:b2:bs) (x,y) = (computeNumbersRowsFirst b0 b1 b2 y):(computeNumbers (b1:b2:bs) ((x-1),y))
 
-computeNumbersFirst :: [[Char]] -> (Int,Int) -> [[Char]]
+computeNumbersFirst :: InternalBoard -> (Int,Int) -> InternalBoard
 computeNumbersFirst board (0,_) = []
 computeNumbersFirst (b:bs) (1,y) = [computeNumbersRowsFirst (makeStr '_' y) b (makeStr '_' y) y]
 computeNumbersFirst (b0:b1:bs) (x,y) = 
@@ -136,11 +143,11 @@ findTileRow :: [Char] -> Int -> Char
 findTileRow (rowx:rowxs) 1 = rowx
 findTileRow (rowx:rowxs) x = findTileRow rowxs (x-1)
 
-findTile :: [[Char]] -> (Int,Int) -> Char
+findTile :: InternalBoard -> (Int,Int) -> Char
 findTile (boardx:boardxs) (1,y) = findTileRow boardx y
 findTile (boardx:boardxs) (x,y) = findTile boardxs ((x-1),y)
 
-buncoverTile :: [[Char]] -> [[Char]] -> (Int,Int) -> (Int,Int) -> [[Char]]
+buncoverTile :: InternalBoard -> PlayerBoard -> (Int,Int) -> (Int,Int) -> PlayerBoard
 buncoverTile board hidden (a,b) (x,y) = do
 	revealedBoard <- [uncoverTile hidden (x,y)]
 	if findTile hidden (x,y) == '#' && findTile board (x,y) == '_'
@@ -211,7 +218,7 @@ flagRow [] _ = []
 flagRow (rowx:rowxs) 1 = flagged:rowxs
 flagRow (rowx:rowxs) x = rowx:(flagRow rowxs (x-1))
 
-flag :: [[Char]] -> (Int,Int) -> [[Char]]
+flag :: PlayerBoard -> (Int,Int) -> PlayerBoard
 flag [] (_,_) = []
 flag (boardx:boardxs) (1,y) = 
 	if findTile (boardx:boardxs) (1,y) == '#'
@@ -227,7 +234,7 @@ unflagRow [] _ = []
 unflagRow (rowx:rowxs) 1 = hidden:rowxs
 unflagRow (rowx:rowxs) x = rowx:(unflagRow rowxs (x-1))
 
-unflag :: [[Char]] -> (Int,Int) -> [[Char]]
+unflag :: PlayerBoard -> (Int,Int) -> PlayerBoard
 unflag [] (_,_) = []
 unflag (boardx:boardxs) (1,y) = 
 	if findTile (boardx:boardxs) (1,y) == 'F'
@@ -247,7 +254,7 @@ isLoseRow (b:bs) (h:hs) =
 		then True
 		else isLoseRow bs hs
 
-isLose :: [[Char]] -> [[Char]] -> Bool
+isLose :: InternalBoard -> PlayerBoard -> Bool
 isLose [] [] = False
 isLose (b:bs) (h:hs) = isLoseRow b h || isLose bs hs
 
@@ -258,14 +265,14 @@ isWinRow (b:bs) (h:hs) =
 		then isWinRow bs hs
 		else False
 
-isWin :: [[Char]] -> [[Char]] -> Bool
+isWin :: InternalBoard -> PlayerBoard -> Bool
 isWin [] [] = True
 isWin (b:bs) (h:hs) = isWinRow b h && isWin bs hs
 --
 
 -- Play the game!
-playGame :: [[Char]] -> [[Char]] -> IO [Char]
-playGame board revealedBoard = do
+playGame :: InternalBoard -> PlayerBoard -> Difficulty -> IO [Char]
+playGame board revealedBoard difficulty = do
 	-- Show game state
 	let currentBoard = showCurrentBoard board revealedBoard
 	putStrLn ""
@@ -287,9 +294,10 @@ playGame board revealedBoard = do
 	putStrLn ""
 
 	-- Make a move
+	-- let revealedBoard' = playTurn action revealedBoard (10,10) (x,y)
 	let revealedBoard' =	case action of
 		"uncover"	->	do
-			buncoverTile board revealedBoard (10,10) (x,y)
+			buncoverTile board revealedBoard ((rows difficulty),(cols difficulty)) (x,y)
 		"flag"		->	do
 			flag revealedBoard (x,y)
 		otherwise	->	do
@@ -298,20 +306,65 @@ playGame board revealedBoard = do
 	-- Detect endgame or repeat
 	if (isLose board revealedBoard') then return "LOSE"
 	else if (isWin board revealedBoard') then return "WIN"
-	else playGame board revealedBoard'
+	else playGame board revealedBoard' difficulty
+--
+
+-- Building placing the mines on the board
+randPerm :: StdGen -> [a] -> [a]
+randPerm _ []   = []
+randPerm gen xs = let (n,newGen) = randomR (0,length xs -1) gen
+                      front = xs !! n
+                  in  front : randPerm newGen (take n xs ++ drop (n+1) xs)
+
+sortGT :: (Int,Int) -> (Int,Int) -> Ordering
+sortGT (a1,b1) (a2,b2) = 
+  case compare a1 a2 of
+    EQ -> compare b2 b1
+    LT -> GT
+    GT -> LT
+
+getRandomMinePositions :: StdGen -> [(Int, Int)] -> Int -> [[(Int, Int)]]
+getRandomMinePositions gen possiblePositions numMines = groupByRow (sortBy sortGT (take numMines (randPerm gen possiblePositions)))
+
+groupByRow :: [(Int,Int)] -> [[(Int,Int)]]
+groupByRow xs = groupBy (\x y -> fst x == fst y) xs
+
+placeMinesRow :: [(Int,Int)] -> Int -> [Char]
+placeMinesRow _ 0 = []
+placeMinesRow [] y = noMine:(placeMinesRow [] (y-1))
+placeMinesRow ((mx,my):ms) y = 
+	if my == y
+		then mine:(placeMinesRow ms (y-1))
+		else noMine:(placeMinesRow ((mx,my):ms) (y-1))
+
+placeMines :: [[(Int,Int)]] -> Int -> Int -> InternalBoard
+placeMines _ 0 _ = []
+placeMines [] x y = (placeMinesRow [] y):(placeMines [] (x-1) y)
+placeMines (((rowMx,rowMy):rowMs):ms) x y = 
+	if rowMx == x
+		then (placeMinesRow ((rowMx,rowMy):rowMs) y):(placeMines ms (x-1) y)
+		else (placeMinesRow [] y):(placeMines (((rowMx,rowMy):rowMs):ms) (x-1) y)
+	--let position = chooseRandomPossible gen possiblePositions
+
+generateRandomBoard :: StdGen -> Difficulty -> InternalBoard
+generateRandomBoard gen difficulty = placeMines ms (rows difficulty) (cols difficulty)
+	where ms = getRandomMinePositions gen possiblePositions (mines difficulty)
+		where possiblePositions = allPossibleBoardPositions (rows difficulty) (cols difficulty)
+
+allPossibleBoardPositions :: Int -> Int -> [(Int,Int)]
+allPossibleBoardPositions _ 0 = []
+allPossibleBoardPositions rowLen rowNum = allPossibleBoardPositions rowLen (rowNum-1) ++ zip (replicate rowLen rowNum) (cycle [1..rowLen])
 --
 
 main :: IO()
 main = do
 	-- Game setup
-	g <- newStdGen -- so
-	let hiddenBoard = initBoard (10,10)
-	let minesBoard = convertToField 
-		[[(listArray ((0,0),(9,9)) ( myRands g ) :: Array (Int,Int) Int) -- so
-		! (x, y) | x <- [0..9]] | y <- [0..9]] -- so
-	let numbersBoard = computeNumbersFirst minesBoard (10,10)
+	gen <- getStdGen -- random number generator seed
+	let difficulty = expert
+	let hiddenBoard = initBoard (rows difficulty,cols difficulty)
+	let minesBoard = generateRandomBoard gen difficulty
+	let numbersBoard = computeNumbersFirst minesBoard (rows difficulty,cols difficulty)
 
 	-- Play game!
-	do
-		result <- playGame numbersBoard hiddenBoard
-		putStrLn result
+	result <- playGame numbersBoard hiddenBoard difficulty
+	putStrLn result
