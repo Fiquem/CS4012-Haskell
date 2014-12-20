@@ -139,68 +139,20 @@ findTile (boardx:boardxs) (1,y) = findTileRow boardx y
 findTile (boardx:boardxs) (x,y) = findTile boardxs ((x-1),y)
 
 buncoverTile :: InternalBoard -> PlayerBoard -> (Int,Int) -> (Int,Int) -> PlayerBoard
-buncoverTile board hidden (a,b) (x,y) = do
-	revealedBoard <- [uncoverTile hidden (x,y)]
-	if findTile hidden (x,y) == '#' && findTile board (x,y) == '_'
-		then
-			if x == 1 && y == 1	then do
-				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y+1))]
-				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x+1),(y+1))]
-				buncoverTile board revealedBoard'' (a,b) ((x+1),y)
-			else
-			if x == 1 && y == b	then do
-				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y-1))]
-				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x+1),(y-1))]
-				buncoverTile board revealedBoard'' (a,b) ((x+1),y)
-			else
-			if x == 1 then do
-				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y+1))]
-				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x+1),(y+1))]
-				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) ((x+1),y)]
-				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) ((x+1),(y-1))]
-				buncoverTile board revealedBoard'''' (a,b) (x,(y-1))
-			-- I'm actually really sorry about this but I don't know what else to do
-			else
-			if x == a && y == 1 then do
-				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y+1))]
-				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),(y+1))]
-				buncoverTile board revealedBoard'' (a,b) ((x-1),y)
-			else
-			if x == a && y == b	then do
-				revealedBoard' <- [buncoverTile board revealedBoard (a,b) ((x-1),y)]
-				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),(y-1))]
-				buncoverTile board revealedBoard'' (a,b) (x,(y-1))
-			else
-			if x == a then do
-				revealedBoard' <- [buncoverTile board revealedBoard (a,b) (x,(y-1))]
-				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),(y-1))]
-				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) ((x-1),y)]
-				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) ((x-1),(y+1))]
-				buncoverTile board revealedBoard'''' (a,b) (x,(y+1))
-			else
-			if y == 1 then do
-				revealedBoard' <- [buncoverTile board revealedBoard (a,b) ((x-1),y)]
-				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),(y+1))]
-				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) (x,(y+1))]
-				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) ((x+1),(y+1))]
-				buncoverTile board revealedBoard'''' (a,b) ((x+1),y)
-			else
-			if y == b then do
-				revealedBoard' <- [buncoverTile board revealedBoard (a,b) ((x+1),y)]
-				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x+1),(y-1))]
-				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) (x,(y-1))]
-				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) ((x-1),(y-1))]
-				buncoverTile board revealedBoard'''' (a,b) ((x-1),y)
-			else do
-				revealedBoard' <- [buncoverTile board revealedBoard (a,b) ((x-1),(y-1))]
-				revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),y)]
-				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) ((x-1),(y+1))]
-				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) (x,(y+1))]
-				revealedBoard''''' <- [buncoverTile board revealedBoard''' (a,b) ((x+1),(y+1))]
-				revealedBoard'''''' <- [buncoverTile board revealedBoard''''' (a,b) ((x+1),y)]
-				revealedBoard''''''' <- [buncoverTile board revealedBoard'''''' (a,b) ((x+1),(y-1))]
-				buncoverTile board revealedBoard''''''' (a,b) (x,(y-1))
-		else revealedBoard
+buncoverTile board hidden (a,b) (x,y) = 
+	if x /= 0 && x /= (a+1) && y /= 0 && y /= (b+1)
+		then if findTile hidden (x,y) == '#' && findTile board (x,y) == '_'
+				then do
+					revealedBoard' <- [buncoverTile board (uncoverTile hidden (x,y)) (a,b) ((x-1),(y-1))]
+					revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),y)]
+					revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) ((x-1),(y+1))]
+					revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) (x,(y+1))]
+					revealedBoard''''' <- [buncoverTile board revealedBoard'''' (a,b) ((x+1),(y+1))]
+					revealedBoard'''''' <- [buncoverTile board revealedBoard''''' (a,b) ((x+1),y)]
+					revealedBoard''''''' <- [buncoverTile board revealedBoard'''''' (a,b) ((x+1),(y-1))]
+					buncoverTile board revealedBoard''''''' (a,b) (x,(y-1))
+				else (uncoverTile hidden (x,y))
+		else hidden
 --
 
 -- Flag/unflag a hidden tile
