@@ -271,6 +271,16 @@ isWin (b:bs) (h:hs) = isWinRow b h && isWin bs hs
 --
 
 -- Play the game!
+playTurn :: String -> InternalBoard -> PlayerBoard -> Difficulty -> (Int,Int) -> PlayerBoard
+playTurn action board revealedBoard difficulty (x,y) =
+	case action of
+		"uncover"	->	do
+			buncoverTile board revealedBoard ((rows difficulty),(cols difficulty)) (x,y)
+		"flag"		->	do
+			flag revealedBoard (x,y)
+		otherwise	->	do
+			unflag revealedBoard (x,y)
+
 playGame :: InternalBoard -> PlayerBoard -> Difficulty -> IO [Char]
 playGame board revealedBoard difficulty = do
 	-- User prompt
@@ -288,14 +298,7 @@ playGame board revealedBoard difficulty = do
 	putStrLn ""
 
 	-- Make a move
-	-- let revealedBoard' = playTurn action revealedBoard (10,10) (x,y)
-	let revealedBoard' =	case action of
-		"uncover"	->	do
-			buncoverTile board revealedBoard ((rows difficulty),(cols difficulty)) (x,y)
-		"flag"		->	do
-			flag revealedBoard (x,y)
-		otherwise	->	do
-			unflag revealedBoard (x,y)
+	let revealedBoard' = playTurn action board revealedBoard difficulty (x,y)
 
 	-- Show game state
 	let currentBoard = showCurrentBoard board revealedBoard'
@@ -344,7 +347,6 @@ placeMines (((rowMx,rowMy):rowMs):ms) x y =
 	if rowMx == x
 		then (placeMinesRow ((rowMx,rowMy):rowMs) y):(placeMines ms (x-1) y)
 		else (placeMinesRow [] y):(placeMines (((rowMx,rowMy):rowMs):ms) (x-1) y)
-	--let position = chooseRandomPossible gen possiblePositions
 
 generateRandomBoard :: StdGen -> Difficulty -> InternalBoard
 generateRandomBoard gen difficulty = placeMines ms (rows difficulty) (cols difficulty)
