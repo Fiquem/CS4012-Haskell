@@ -352,15 +352,15 @@ generateRandomBoard gen difficulty = placeMines ms (rows difficulty) (cols diffi
 		where possiblePositions = allPossibleBoardPositions (rows difficulty) (cols difficulty)
 
 allPossibleBoardPositions :: Int -> Int -> [(Int,Int)]
-allPossibleBoardPositions _ 0 = []
-allPossibleBoardPositions rowLen rowNum = allPossibleBoardPositions rowLen (rowNum-1) ++ zip (replicate rowLen rowNum) (cycle [1..rowLen])
+allPossibleBoardPositions 0 _ = []
+allPossibleBoardPositions rowNum rowLen = allPossibleBoardPositions (rowNum-1) rowLen ++ zip (replicate rowLen rowNum) (cycle [1..rowLen])
 --
 
 main :: IO()
 main = do
 	-- Game setup
 	gen <- getStdGen -- random number generator seed
-	let difficulty = intermediate
+	let difficulty = expert
 	let hiddenBoard = initBoard (rows difficulty,cols difficulty)
 
 	putStrLn ""
