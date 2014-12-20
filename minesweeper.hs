@@ -18,8 +18,12 @@ data Difficulty = Difficulty { rows :: Int
 							 , cols :: Int
 							 , mines :: Int
 							 } deriving (Show)
-type InternalBoard = [[Char]]
-type PlayerBoard = [[Char]]
+
+type Tile = Char
+type Row = [Tile]
+type InternalBoard = [Row]
+type PlayerBoard = [Row]
+type Coordinates = (Int,Int)
 
 
 easy = Difficulty 10 10 10 -- test
@@ -27,19 +31,6 @@ easy = Difficulty 10 10 10 -- test
 beginner = Difficulty 9 9 10
 intermediate = Difficulty 16 16 40
 expert = Difficulty 16 30 99
-
--- Build initial revealed board from given, random input
-convertToFieldRow :: [Int] -> [Char]
-convertToFieldRow [] = []
-convertToFieldRow (x:xs) = 
-	case x of
-		0 -> mine:(convertToFieldRow xs)
-		_ -> noMine:(convertToFieldRow xs)
-
-convertToField :: [[Int]] -> InternalBoard
-convertToField [] = []
-convertToField (x:xs) = (convertToFieldRow x):(convertToField xs)
---
 
 -- Build initial hidden board
 initRow :: Int -> [Char]
@@ -206,9 +197,9 @@ buncoverTile board hidden (a,b) (x,y) = do
 				revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) ((x-1),(y+1))]
 				revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) (x,(y+1))]
 				revealedBoard''''' <- [buncoverTile board revealedBoard''' (a,b) ((x+1),(y+1))]
-				revealedBoard''''' <- [buncoverTile board revealedBoard'''' (a,b) ((x+1),y)]
-				revealedBoard'''''' <- [buncoverTile board revealedBoard''''' (a,b) ((x+1),(y-1))]
-				buncoverTile board revealedBoard'''''' (a,b) (x,(y-1))
+				revealedBoard'''''' <- [buncoverTile board revealedBoard''''' (a,b) ((x+1),y)]
+				revealedBoard''''''' <- [buncoverTile board revealedBoard'''''' (a,b) ((x+1),(y-1))]
+				buncoverTile board revealedBoard''''''' (a,b) (x,(y-1))
 		else revealedBoard
 --
 
