@@ -25,9 +25,6 @@ type InternalBoard = [Row]
 type PlayerBoard = [Row]
 type Coordinates = (Int,Int)
 
-
-easy = Difficulty 10 10 10 -- test
-
 beginner = Difficulty 9 9 10
 intermediate = Difficulty 16 16 40
 expert = Difficulty 16 30 99
@@ -138,21 +135,22 @@ findTile :: InternalBoard -> (Int,Int) -> Char
 findTile (boardx:boardxs) (1,y) = findTileRow boardx y
 findTile (boardx:boardxs) (x,y) = findTile boardxs ((x-1),y)
 
+createListOfAdjacentTiles :: (Int,Int) -> [(Int,Int)]
+createListOfAdjacentTiles (x,y) = [((x-1),(y-1)),((x-1),y),((x-1),(y+1)),(x,(y+1)),((x+1),(y+1)),((x+1),y),((x+1),(y-1)),(x,(y-1))]
+
+uncoverAdjacentTiles :: InternalBoard -> PlayerBoard -> (Int,Int) -> [(Int,Int)] -> PlayerBoard
+uncoverAdjacentTiles board revealedBoard boardSize [] = revealedBoard
+uncoverAdjacentTiles board revealedBoard boardSize (tile:tiles) = 
+	uncoverAdjacentTiles board revealedBoard' boardSize tiles
+	where revealedBoard' = buncoverTile board revealedBoard boardSize tile
+
 buncoverTile :: InternalBoard -> PlayerBoard -> (Int,Int) -> (Int,Int) -> PlayerBoard
-buncoverTile board hidden (a,b) (x,y) = 
-	if x /= 0 && x /= (a+1) && y /= 0 && y /= (b+1)
-		then if findTile hidden (x,y) == '#' && findTile board (x,y) == '_'
-				then do
-					revealedBoard' <- [buncoverTile board (uncoverTile hidden (x,y)) (a,b) ((x-1),(y-1))]
-					revealedBoard'' <- [buncoverTile board revealedBoard' (a,b) ((x-1),y)]
-					revealedBoard''' <- [buncoverTile board revealedBoard'' (a,b) ((x-1),(y+1))]
-					revealedBoard'''' <- [buncoverTile board revealedBoard''' (a,b) (x,(y+1))]
-					revealedBoard''''' <- [buncoverTile board revealedBoard'''' (a,b) ((x+1),(y+1))]
-					revealedBoard'''''' <- [buncoverTile board revealedBoard''''' (a,b) ((x+1),y)]
-					revealedBoard''''''' <- [buncoverTile board revealedBoard'''''' (a,b) ((x+1),(y-1))]
-					buncoverTile board revealedBoard''''''' (a,b) (x,(y-1))
-				else (uncoverTile hidden (x,y))
-		else hidden
+buncoverTile board revealedBoard (a,b) (x,y) = 
+	if x /= 0 && x /= (a+1) && y /= 0 && y /= (b+1) && findTile revealedBoard (x,y) == '#'
+		then if findTile board (x,y) == '_'
+			then uncoverAdjacentTiles board (uncoverTile revealedBoard (x,y)) (a,b) (createListOfAdjacentTiles (x,y))
+			else (uncoverTile revealedBoard (x,y))
+		else revealedBoard
 --
 
 -- Flag/unflag a hidden tile
