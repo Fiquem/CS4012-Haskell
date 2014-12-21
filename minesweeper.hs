@@ -239,9 +239,11 @@ getUserInputAndMakeSureIt'sNotShittyInput difficulty = do
 	if length coords' == 3 && ((coords' !! 0) :: String) `elem` ["flag","unflag","uncover"] && 
 		(read (coords' !! 1) :: Int) `elem` [1..(cols difficulty)] && (read (coords' !! 2) :: Int) `elem` [1..(rows difficulty)]
 		then return coords'
-		else do
-			putStrLn "No. Input again."
-			getUserInputAndMakeSureIt'sNotShittyInput difficulty
+		else if length coords' == 1 && ((coords' !! 0) :: String) == "playMove"
+			then return (coords'++[" 0 0"])
+			else do
+				putStrLn "No. Input again."
+				getUserInputAndMakeSureIt'sNotShittyInput difficulty
 
 playGame :: InternalBoard -> PlayerBoard -> Difficulty -> GameResult
 playGame board revealedBoard difficulty = do
@@ -259,7 +261,10 @@ playGame board revealedBoard difficulty = do
 	putStrLn ""
 
 	-- Make a move
-	let revealedBoard' = playTurn action board revealedBoard difficulty (x,y)
+	let revealedBoard' = 
+		if action == "playMove"
+			then playMove board revealedBoard difficulty
+			else playTurn action board revealedBoard difficulty (x,y)
 
 	-- Show game state
 	let currentBoard = showCurrentBoard board revealedBoard'
@@ -317,6 +322,11 @@ generateRandomBoard gen difficulty = placeMines ms ((rows difficulty),(cols diff
 allPossibleBoardPositions :: Rows -> Columns -> [Coordinates]
 allPossibleBoardPositions 0 _ = []
 allPossibleBoardPositions rowNum rowLen = allPossibleBoardPositions (rowNum-1) rowLen ++ zip (replicate rowLen rowNum) (cycle [1..rowLen])
+--
+
+-- Solver oh dear
+playMove :: InternalBoard -> PlayerBoard -> Difficulty -> PlayerBoard
+playMove board revealedBoard difficulty = playTurn "flag" board revealedBoard difficulty (1,1)
 --
 
 main :: IO()
