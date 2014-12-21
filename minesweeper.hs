@@ -51,21 +51,6 @@ initBoard (0,_) = []
 initBoard (x,y) = (initRow y):(initBoard ((x-1),y))
 --
 
--- User chooses tile to uncover
-uncoverTileRow :: Row -> PositionInRow -> Row
-uncoverTileRow [] _ = []
-uncoverTileRow (rowx:rowxs) 1 = 
-	case rowx of
-		'F' -> rowx:rowxs
-		_	-> revealed:rowxs
-uncoverTileRow (rowx:rowxs) x = rowx:(uncoverTileRow rowxs (x-1))
-
-uncoverTile :: PlayerBoard -> Coordinates -> PlayerBoard
-uncoverTile [] (_,_) = []
-uncoverTile (boardx:boardxs) (1,y) = (uncoverTileRow boardx y):boardxs
-uncoverTile (boardx:boardxs) (x,y) = boardx:(uncoverTile boardxs ((x-1),y))
---
-
 -- Current game state
 showCurrentBoardRows :: Row -> Row -> Row
 showCurrentBoardRows [] [] = []
@@ -138,7 +123,7 @@ computeNumbersFirst (b0:b1:bs) (x,y) =
 	(computeNumbersRowsFirst (makeStr '_' y) b0 b1 y):(computeNumbers (b0:b1:bs) ((x-1),y))
 --
 
--- Uncover all tiles adjacent to non-numbered tiles
+-- Uncover tile and all tiles adjacent if it's a non-numbered tile
 findTileRow :: Row -> PositionInRow -> Tile
 findTileRow (rowx:rowxs) 1 = rowx
 findTileRow (rowx:rowxs) x = findTileRow rowxs (x-1)
@@ -155,6 +140,19 @@ uncoverAdjacentTiles board revealedBoard boardSize [] = revealedBoard
 uncoverAdjacentTiles board revealedBoard boardSize (tile:tiles) = 
 	uncoverAdjacentTiles board revealedBoard' boardSize tiles
 	where revealedBoard' = buncoverTile board revealedBoard boardSize tile
+
+uncoverTileRow :: Row -> PositionInRow -> Row
+uncoverTileRow [] _ = []
+uncoverTileRow (rowx:rowxs) 1 = 
+	case rowx of
+		'F' -> rowx:rowxs
+		_	-> revealed:rowxs
+uncoverTileRow (rowx:rowxs) x = rowx:(uncoverTileRow rowxs (x-1))
+
+uncoverTile :: PlayerBoard -> Coordinates -> PlayerBoard
+uncoverTile [] (_,_) = []
+uncoverTile (boardx:boardxs) (1,y) = (uncoverTileRow boardx y):boardxs
+uncoverTile (boardx:boardxs) (x,y) = boardx:(uncoverTile boardxs ((x-1),y))
 
 buncoverTile :: InternalBoard -> PlayerBoard -> BoardSize -> Coordinates -> PlayerBoard
 buncoverTile board revealedBoard (a,b) (x,y) = 
@@ -234,6 +232,17 @@ playTurn action board revealedBoard difficulty (x,y) =
 		otherwise	->	do
 			unflag revealedBoard (x,y)
 
+getUserInputAndMakeSureIt'sNotShittyInput :: Difficulty -> IO [[Char]]
+getUserInputAndMakeSureIt'sNotShittyInput difficulty = do
+	coords <- getLine
+	let coords' = splitOn " " coords
+	if length coords' == 3 && ((coords' !! 0) :: String) `elem` ["flag","unflag","uncover"] && 
+		(read (coords' !! 1) :: Int) `elem` [1..(cols difficulty)] && (read (coords' !! 2) :: Int) `elem` [1..(rows difficulty)]
+		then return coords'
+		else do
+			putStrLn "No. Input again."
+			getUserInputAndMakeSureIt'sNotShittyInput difficulty
+
 playGame :: InternalBoard -> PlayerBoard -> Difficulty -> GameResult
 playGame board revealedBoard difficulty = do
 	-- User prompt
@@ -243,11 +252,10 @@ playGame board revealedBoard difficulty = do
 	putStrLn ""
 
 	-- User input
-	coords <- getLine
-	let coords' = splitOn " " coords
-	let action = (coords' !! 0)
-	let x = read (coords' !! 2) :: Int
-	let y = read (coords' !! 1) :: Int
+	coords <- getUserInputAndMakeSureIt'sNotShittyInput difficulty
+	let action = (coords !! 0)
+	let x = read (coords !! 2) :: Int
+	let y = read (coords !! 1) :: Int
 	putStrLn ""
 
 	-- Make a move
@@ -265,8 +273,8 @@ playGame board revealedBoard difficulty = do
 	else playGame board revealedBoard' difficulty
 --
 
--- Building placing the mines on the board
-randPerm :: StdGen -> [a] -> [a]
+-- Building board, placing mines
+randPerm :: StdGen -> [Coordinates] -> [Coordinates]
 randPerm _ []   = []
 randPerm gen xs = let (n,newGen) = randomR (0,length xs -1) gen
                       front = xs !! n
