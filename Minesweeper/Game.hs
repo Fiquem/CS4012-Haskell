@@ -1,6 +1,7 @@
 module Minesweeper.Game where
 
 import System.Random
+import Minesweeper.Cell
 import Minesweeper.Board
 import Minesweeper.Difficulty
 
@@ -23,4 +24,6 @@ main = do
   let difficulty = beginner
   let board = generateRandomBoard gen difficulty
 
-  putStrLn $ showBoard minesBoard
+  putStrLn $ showBoard board
+
+  putStrLn $ showTrueBoard board
