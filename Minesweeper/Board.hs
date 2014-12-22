@@ -1,7 +1,8 @@
 module Minesweeper.Board (
   generateRandomBoard,
   showBoard,
-  getCell
+  getCell,
+  replaceCell
 ) where
 
 import Data.List
@@ -16,9 +17,20 @@ type Height = Int
 showBoard :: Board -> String
 showBoard b = intercalate "\n" (map concat $ map (map show) b)
 
--- TODO
+-- TODO: return Maybe Cell
 getCell :: Board -> (Int, Int) -> Cell
-getCell board (x, y) = createCell
+getCell board (x, y) = board!!(y-1)!!(x-1)
+
+replaceCell :: Board -> Cell -> (Int, Int) -> Board
+replaceCell oldBoard newCell (x, y) = newBoard
+  where
+    newBoard = bx ++ [newRow] ++ bys 
+    (bx, _:bys) = splitAt (y-1) oldBoard
+    newRow = replaceCellAtPosition (oldBoard!!(y-1)) newCell x  
+
+replaceCellAtPosition :: [Cell] -> Cell -> Int -> [Cell]
+replaceCellAtPosition oldList cell position = rx ++ [cell] ++ rys
+    where (rx, _:rys) = splitAt (position-1) oldList
 
 generateRandomBoard :: StdGen -> Difficulty -> Board
 generateRandomBoard gen difficulty = calculateAdjacency minedBoard
@@ -27,7 +39,7 @@ generateRandomBoard gen difficulty = calculateAdjacency minedBoard
     emptyBoard = createBoardOfCells (rows difficulty) (cols difficulty)
 
 placeMines :: StdGen -> Difficulty -> Board -> Board
-placeMines gen difficulty board = placeMinesAtCoordinates mineCoordinates board
+placeMines gen difficulty board = placeMinesAtCoordinates board mineCoordinates 
   where
     mineCoordinates = getRandomMinePositions gen possiblePositions (mines difficulty)
     possiblePositions = allPossibleBoardPositions (rows difficulty) (cols difficulty)
@@ -36,17 +48,21 @@ placeMines gen difficulty board = placeMinesAtCoordinates mineCoordinates board
 calculateAdjacency :: Board -> Board
 calculateAdjacency board = board
 
+
+-- Returns board of locations of mines as 1 and no mines as 0
 covertBoardToNumbers :: Board -> [[Int]]
 covertBoardToNumbers board = map (map (\x -> if hasMine x then 1 else 0)) board
 
 createBoardOfCells :: Width -> Height -> Board
 createBoardOfCells width height = replicate height $ take width $ cycle [createCell]
 
-
-
--- TODO
-placeMinesAtCoordinates :: [(Int, Int)] -> Board -> Board
-placeMinesAtCoordinates coords board = board
+placeMinesAtCoordinates :: Board -> [(Int, Int)] -> Board
+placeMinesAtCoordinates board [] = board
+placeMinesAtCoordinates board (coord:coords) = newBoard
+  where
+    newBoard = replaceCell modifiedBoard newCell coord
+    newCell = createCell { hasMine = True }
+    modifiedBoard = placeMinesAtCoordinates board coords
 
 -- Generate random mine position coordinates
 getRandomMinePositions :: StdGen -> [(Int, Int)] -> Int -> [(Int, Int)]
@@ -59,6 +75,6 @@ allPossibleBoardPositions rowNum rowLen = allPossibleBoardPositions (rowNum-1) r
 -- Randomly shuffles a list
 randPerm :: StdGen -> [(Int, Int)] -> [(Int, Int)]
 randPerm _ []   = []
-randPerm gen xs = let (n,newGen) = randomR (0, length xs -1) gen
+randPerm gen xs = let (n, newGen) = randomR (0, length xs -1) gen
                       front = xs !! n
                   in  front : randPerm newGen (take n xs ++ drop (n+1) xs)
