@@ -1,3 +1,4 @@
+module Minesweeper where
 
 import System.Random
 import Data.Array.IArray
@@ -478,8 +479,8 @@ playMove board revealedBoard difficulty =
 		(_,coords') = (isSafeMoveFirst board revealedBoard (rows difficulty,cols difficulty))
 --
 
-main :: IO()
-main = do
+mainCLI :: IO()
+mainCLI = do
 	-- Game setup
 	gen <- getStdGen -- random number generator seed
 	let difficulty = beginner
