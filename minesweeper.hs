@@ -267,6 +267,15 @@ playGame board revealedBoard difficulty = do
 			then playMove board revealedBoard difficulty
 			else playTurn action board revealedBoard difficulty (x,y)
 
+	--let (revealedBoard',(somethingx,somethingy)) = 
+	--	if action == "playMove"
+	--		then playMove board revealedBoard difficulty
+	--		else (playTurn action board revealedBoard difficulty (x,y),(0,0))
+
+	--print somethingx
+	--print somethingy
+	--print "LOOK AT THIS"
+
 	-- Show game state
 	let currentBoard = showCurrentBoard board revealedBoard'
 	putStrLn ""
@@ -327,68 +336,68 @@ allPossibleBoardPositions rowNum rowLen = allPossibleBoardPositions (rowNum-1) r
 
 -- Solver oh dear
 
---numAdjUnrevealedTiles :: [Char] -> Int
---numAdjUnrevealedTiles [] = 0
---numAdjUnrevealedTiles (x:xs) = 
---	if x == ' '
---		then 0 + (numAdjUnrevealedTiles xs)
---		else 1 + (numAdjUnrevealedTiles xs)
+numAdjUnrevealedTiles :: [Char] -> Int
+numAdjUnrevealedTiles [] = 0
+numAdjUnrevealedTiles (x:xs) = 
+	if x == ' '
+		then 0 + (numAdjUnrevealedTiles xs)
+		else 1 + (numAdjUnrevealedTiles xs)
 
---findCoordOfAdjacentCoveredTile :: Tile -> Tile -> Tile -> Tile -> Tile -> Tile -> Tile -> Tile -> Int -> Coordinates
---findCoordOfAdjacentCoveredTile a b c d e f g h y
---	| a == hidden	= (-1,y-1)
---	| b == hidden	= (-1,y)
---	| c == hidden	= (-1,y+1)
---	| d == hidden	= (0,y-1)
---	| e == hidden	= (0,y+1)
---	| f == hidden	= (1,y-1)
---	| g == hidden	= (1,y)
---	| h == hidden	= (1,y+1)
---	| otherwise		= (5,5) -- Tile is already flagged
+findCoordOfAdjacentCoveredTile :: Tile -> Tile -> Tile -> Tile -> Tile -> Tile -> Tile -> Tile -> Int -> Coordinates
+findCoordOfAdjacentCoveredTile a b c d e f g h y
+	| a == hidden	= (1,y+1)
+	| b == hidden	= (1,y)
+	| c == hidden	= (1,y-1)
+	| d == hidden	= (0,y+1)
+	| e == hidden	= (0,y-1)
+	| f == hidden	= (-1,y+1)
+	| g == hidden	= (-1,y)
+	| h == hidden	= (-1,y-1)
+	| otherwise		= (0,0) -- Tile is already flagged
 
---isMineRows :: InternalRow -> RowAbove -> Row -> RowBelow -> RowSize -> (Bool,Coordinates)
---isMineRows _ _ _ _ 0 = (False,(0,0))
---isMineRows _ _ (_:'#':_) _ 1 = (False,(0,0))
---isMineRows (x:xs) (a0:a1:as) (_:'#':bs) (c0:c1:cs) y = isMineRows xs (a1:as) ('#':bs) (c1:cs) (y-1)
---isMineRows (x:xs) (a0:a1:as) (b0:b1:bs) (c0:c1:cs) 1 = 
---	if x `notElem` ['_','o'] && digitToInt x == numAdjUnrevealedTiles [a0,a1,' ',b0,' ',c0,c1,' ']
---		then (True,findCoordOfAdjacentCoveredTile a0 a1 ' ' b0 ' ' c0 c1 ' ' 1)
---		else (False,(0,0))
---isMineRows (x:xs) (a0:a1:a2:as) (b0:b1:b2:bs) (c0:c1:c2:cs) y = 
---	if x `notElem` ['_','o'] && digitToInt x == numAdjUnrevealedTiles [a0,a1,a2,b0,b2,c0,c1,c2]
---		then (True,findCoordOfAdjacentCoveredTile a0 a1 a2 b0 b2 c0 c1 c2 y)
---		else isMineRows xs (a1:a2:as) (b1:b2:bs) (c1:c2:cs) (y-1)
+isMineRows :: InternalRow -> RowAbove -> Row -> RowBelow -> RowSize -> (Bool,Coordinates)
+isMineRows _ _ _ _ 0 = (False,(4,1))
+isMineRows _ _ (_:'#':_) _ 1 = (False,(4,2))
+isMineRows (x:xs) (a0:a1:as) (_:'#':bs) (c0:c1:cs) y = isMineRows xs (a1:as) ('#':bs) (c1:cs) (y-1)
+isMineRows (x:xs) (a0:a1:as) (b0:b1:bs) (c0:c1:cs) 1 = 
+	if x `notElem` ['_','o'] && digitToInt x == numAdjUnrevealedTiles [a0,a1,' ',b0,' ',c0,c1,' '] && (findCoordOfAdjacentCoveredTile a0 a1 ' ' b0 ' ' c0 c1 ' ' 1) /= (0,0)
+		then (True,findCoordOfAdjacentCoveredTile a0 a1 ' ' b0 ' ' c0 c1 ' ' 1)
+		else (False,(4,3))
+isMineRows (x:xs) (a0:a1:a2:as) (b0:b1:b2:bs) (c0:c1:c2:cs) y = 
+	if x `notElem` ['_','o'] && digitToInt x == numAdjUnrevealedTiles [a0,a1,a2,b0,b2,c0,c1,c2] && (findCoordOfAdjacentCoveredTile a0 a1 a2 b0 b2 c0 c1 c2 y) /= (0,0)
+		then (True,findCoordOfAdjacentCoveredTile a0 a1 a2 b0 b2 c0 c1 c2 y)
+		else isMineRows xs (a1:a2:as) (b1:b2:bs) (c1:c2:cs) (y-1)
 
---isMineRowsFirst :: InternalRow -> RowAbove -> Row -> RowBelow -> RowSize -> (Bool,Coordinates)
---isMineRowsFirst _ _ _ _ 0 = (False,(0,0))
---isMineRowsFirst _ _ ('#':_) _ 1 = (False,(0,0))
---isMineRowsFirst (x:xs) (a0:as) ('#':bs) (c0:cs) y = isMineRows xs (a0:as) ('#':bs) (c0:cs) (y-1)
---isMineRowsFirst (x:xs) (a:as) (' ':bs) (c:cs) 1 = 
---	if x `notElem` ['_','o'] && digitToInt x == numAdjUnrevealedTiles [' ',a,' ',' ',' ',' ',c,' ']
---		then (True,findCoordOfAdjacentCoveredTile ' ' a ' ' ' ' ' ' ' ' c ' ' 1)
---		else (False,(0,0))
---isMineRowsFirst (x:xs) (a0:a1:as) (b0:b1:bs) (c0:c1:cs) y = 
---	if x `notElem` ['_','o'] && digitToInt x == numAdjUnrevealedTiles [' ',a0,a1,' ',b1,' ',c0,c1]
---		then (True,findCoordOfAdjacentCoveredTile ' ' a0 a1 ' ' b1 ' ' c0 c1 y)
---		else isMineRows xs (a0:a1:as) (b0:b1:bs) (c0:c1:cs) (y-1)
+isMineRowsFirst :: InternalRow -> RowAbove -> Row -> RowBelow -> RowSize -> (Bool,Coordinates)
+isMineRowsFirst _ _ _ _ 0 = (False,(3,1))
+isMineRowsFirst _ _ ('#':_) _ 1 = (False,(3,2))
+isMineRowsFirst (x:xs) (a0:as) ('#':bs) (c0:cs) y = isMineRows xs (a0:as) ('#':bs) (c0:cs) (y-1)
+isMineRowsFirst (x:xs) (a:as) (' ':bs) (c:cs) 1 = 
+	if x `notElem` ['_','o'] && digitToInt x == numAdjUnrevealedTiles [' ',a,' ',' ',' ',' ',c,' '] && (findCoordOfAdjacentCoveredTile ' ' a ' ' ' ' ' ' ' ' c ' ' 1) /= (0,0)
+		then (True,findCoordOfAdjacentCoveredTile ' ' a ' ' ' ' ' ' ' ' c ' ' 1)
+		else (False,(3,3))
+isMineRowsFirst (x:xs) (a0:a1:as) (b0:b1:bs) (c0:c1:cs) y = 
+	if x `notElem` ['_','o'] && digitToInt x == numAdjUnrevealedTiles [' ',a0,a1,' ',b1,' ',c0,c1] && (findCoordOfAdjacentCoveredTile  ' ' a0 a1 ' ' b1 ' ' c0 c1 y) /= (0,0)
+		then (True,findCoordOfAdjacentCoveredTile ' ' a0 a1 ' ' b1 ' ' c0 c1 y)
+		else isMineRows xs (a0:a1:as) (b0:b1:bs) (c0:c1:cs) (y-1)
 
---isMine :: InternalBoard -> PlayerBoard -> BoardSize -> (Bool,Coordinates)
---isMine _ _ (0,_) = (False,(0,0))
---isMine (b0:b1:bs) (h0:h1:hs) (1,y) = isMineRowsFirst b1 h0 h1 (makeStr ' ' y) y
---isMine (b0:b1:b2:bs) (h0:h1:h2:hs) (x,y) = 
---	if (isMineRowsFirst b1 h0 h1 h2 y) == (True,coords)
---		then (True,addCoords coords (x,1))
---		else isMine (b1:b2:bs) (h1:h2:hs) ((x-1),y)
---	where (_,coords) = (isMineRowsFirst b1 h0 h1 h2 y)
+isMine :: InternalBoard -> PlayerBoard -> BoardSize -> (Bool,Coordinates)
+isMine _ _ (0,_) = (False,(2,2))
+isMine (b0:b1:bs) (h0:h1:hs) (1,y) = isMineRowsFirst b1 h0 h1 (makeStr ' ' y) y
+isMine (b0:b1:b2:bs) (h0:h1:h2:hs) (x,y) = 
+	if (isMineRowsFirst b1 h0 h1 h2 y) == (True,coords)
+		then (True,addCoords coords (x,0))
+		else isMine (b1:b2:bs) (h1:h2:hs) ((x-1),y)
+	where (_,coords) = (isMineRowsFirst b1 h0 h1 h2 y)
 
---isMineFirst :: InternalBoard -> PlayerBoard -> BoardSize -> (Bool,Coordinates)
---isMineFirst _ _ (0,_) = (False,(0,0))
---isMineFirst (b:bs) (h:hs) (1,y) = isMineRowsFirst b (makeStr ' ' y) h (makeStr ' ' y) y
---isMineFirst (b0:b1:bs) (h0:h1:hs) (x,y) = 
---	if (isMineRowsFirst b0 (makeStr ' ' y) h0 h1 y) == (True,coords)
---		then (True,addCoords coords (x,1))
---		else isMine (b0:b1:bs) (h0:h1:bs) ((x-1),y)
---	where (_,coords) = (isMineRowsFirst b0 (makeStr ' ' y) h0 h1 y)
+isMineFirst :: InternalBoard -> PlayerBoard -> BoardSize -> (Bool,Coordinates)
+isMineFirst _ _ (0,_) = (False,(1,1))
+isMineFirst (b:bs) (h:hs) (1,y) = isMineRowsFirst b (makeStr ' ' y) h (makeStr ' ' y) y
+isMineFirst (b0:b1:bs) (h0:h1:hs) (x,y) = 
+	if (isMineRowsFirst b0 (makeStr ' ' y) h0 h1 y) == (True,coords)
+		then (True,addCoords coords (x,0))
+		else isMine (b0:b1:bs) (h0:h1:bs) ((x-1),y)
+	where (_,coords) = (isMineRowsFirst b0 (makeStr ' ' y) h0 h1 y)
 
 --showCoords :: Coordinates -> String
 --showCoords (x,y) = [(intToDigit x)]++" "++[(intToDigit y)]
@@ -413,15 +422,18 @@ findFirstHiddenTile (b:bs) (x,y) =
 		then (x,(y+1)-findFirstHiddenTileRows b 1 y)
 		else (findFirstHiddenTile bs ((x-1,y)))
 
+--playMove :: InternalBoard -> PlayerBoard -> Difficulty -> (PlayerBoard,Coordinates)
 playMove :: InternalBoard -> PlayerBoard -> Difficulty -> PlayerBoard
 playMove board revealedBoard difficulty = 
 	-- Initial move
-	playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1)))
+	--playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1)))
 	-- Flag known mine
-	--if (isMineFirst board revealedBoard (rows difficulty,cols difficulty)) == (True,coords)
-	--	then playTurn "flag" board revealedBoard difficulty coords --(subCoords (rows difficulty,cols difficulty) coords)
-	--	else playTurn "uncover" board revealedBoard difficulty (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty))
-	--where (_,coords) = (isMineFirst board revealedBoard (rows difficulty,cols difficulty))
+	if (isMineFirst board revealedBoard (rows difficulty,cols difficulty)) == (True,coords)
+		--then (playTurn "flag" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords coords (1,1))),coords)
+		--else (playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1))),coords)
+		then playTurn "flag" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords coords (1,1)))
+		else playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1)))
+	where (_,coords) = (isMineFirst board revealedBoard (rows difficulty,cols difficulty))
 --
 
 main :: IO()
