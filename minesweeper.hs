@@ -48,8 +48,8 @@ initRow 0 = []
 initRow x = hidden:(initRow (x-1))
 
 initBoard :: BoardSize -> PlayerBoard
-initBoard (0,_) = []
-initBoard (x,y) = (initRow y):(initBoard ((x-1),y))
+initBoard (0, _) = []
+initBoard (x, y) = (initRow y):(initBoard (x-1, y))
 --
 
 -- Current game state
@@ -100,7 +100,7 @@ computeNumbersRows (a0:a1:as) (_:'o':bs) (c0:c1:cs) y =
 	'o':(computeNumbersRows (a1:as) ('o':bs) (c1:cs) (y-1))
 computeNumbersRows (a0:a1:a2:as) (b0:b1:b2:bs) (c0:c1:c2:cs) y = 
 	(sumAdj a0 a1 a2 b0 b2 c0 c1 c2):(computeNumbersRows (a1:a2:as) (b1:b2:bs) (c1:c2:cs) (y-1))
-computeNumbersRows a b c y = " "++[intToDigit y]++" "++a++" "++b++" "++c
+computeNumbersRows a b c y = " " ++ [intToDigit y] ++ " " ++ a ++ " " ++ b++ " " ++ c
 
 computeNumbersRowsFirst :: RowAbove -> Row -> RowBelow -> RowSize -> Row
 computeNumbersRowsFirst _ _ _ 0 = []
@@ -110,18 +110,18 @@ computeNumbersRowsFirst (a0:as) ('o':bs) (c0:cs) y =
 	'o':(computeNumbersRows (a0:as) ('o':bs) (c0:cs) (y-1))
 computeNumbersRowsFirst (a0:a1:as) (b0:b1:bs) (c0:c1:cs) y = 
 	(sumAdj '_' a0 a1 '_' b1 '_' c0 c1):(computeNumbersRows (a0:a1:as) (b0:b1:bs) (c0:c1:cs) (y-1))
-computeNumbersRowsFirst a b c y = " "++[intToDigit y]++" "++a++" "++b++" "++c
+computeNumbersRowsFirst a b c y = " " ++ [intToDigit y] ++ " " ++ a ++ " " ++ b++ " " ++ c
 
 computeNumbers :: InternalBoard -> BoardSize -> InternalBoard
-computeNumbers _ (0,_) = []
-computeNumbers (b0:b1:bs) (1,y) = [computeNumbersRowsFirst b0 b1 (makeStr '_' y) y]
-computeNumbers (b0:b1:b2:bs) (x,y) = (computeNumbersRowsFirst b0 b1 b2 y):(computeNumbers (b1:b2:bs) ((x-1),y))
+computeNumbers _ (0, _) = []
+computeNumbers (b0:b1:bs) (1, y) = [computeNumbersRowsFirst b0 b1 (makeStr '_' y) y]
+computeNumbers (b0:b1:b2:bs) (x, y) = (computeNumbersRowsFirst b0 b1 b2 y):(computeNumbers (b1:b2:bs) (x-1, y))
 
 computeNumbersFirst :: InternalBoard -> BoardSize -> InternalBoard
-computeNumbersFirst board (0,_) = []
-computeNumbersFirst (b:bs) (1,y) = [computeNumbersRowsFirst (makeStr '_' y) b (makeStr '_' y) y]
-computeNumbersFirst (b0:b1:bs) (x,y) = 
-	(computeNumbersRowsFirst (makeStr '_' y) b0 b1 y):(computeNumbers (b0:b1:bs) ((x-1),y))
+computeNumbersFirst board (0, _) = []
+computeNumbersFirst (b:bs) (1, y) = [computeNumbersRowsFirst (makeStr '_' y) b (makeStr '_' y) y]
+computeNumbersFirst (b0:b1:bs) (x, y) = 
+	(computeNumbersRowsFirst (makeStr '_' y) b0 b1 y):(computeNumbers (b0:b1:bs) ((x-1), y))
 --
 
 -- Uncover tile and all tiles adjacent if it's a non-numbered tile
@@ -130,11 +130,11 @@ findTileRow (rowx:rowxs) 1 = rowx
 findTileRow (rowx:rowxs) x = findTileRow rowxs (x-1)
 
 findTile :: InternalBoard -> Coordinates -> Tile
-findTile (boardx:boardxs) (1,y) = findTileRow boardx y
-findTile (boardx:boardxs) (x,y) = findTile boardxs ((x-1),y)
+findTile (boardx:boardxs) (1, y) = findTileRow boardx y
+findTile (boardx:boardxs) (x, y) = findTile boardxs (x-1, y)
 
 createListOfAdjacentTiles :: Coordinates -> [Coordinates]
-createListOfAdjacentTiles (x,y) = [((x-1),(y-1)),((x-1),y),((x-1),(y+1)),(x,(y+1)),((x+1),(y+1)),((x+1),y),((x+1),(y-1)),(x,(y-1))]
+createListOfAdjacentTiles (x, y) = [(x-1, y-1), (x-1, y), (x-1, y+1), (x, y+1), (x+1, y+1), (x+1, y), (x+1, y-1), (x, y-1)]
 
 uncoverAdjacentTiles :: InternalBoard -> PlayerBoard -> Coordinates -> [Coordinates] -> PlayerBoard
 uncoverAdjacentTiles board revealedBoard boardSize [] = revealedBoard
@@ -151,16 +151,16 @@ uncoverTileRow (rowx:rowxs) 1 =
 uncoverTileRow (rowx:rowxs) x = rowx:(uncoverTileRow rowxs (x-1))
 
 uncoverTile :: PlayerBoard -> Coordinates -> PlayerBoard
-uncoverTile [] (_,_) = []
-uncoverTile (boardx:boardxs) (1,y) = (uncoverTileRow boardx y):boardxs
-uncoverTile (boardx:boardxs) (x,y) = boardx:(uncoverTile boardxs ((x-1),y))
+uncoverTile [] (_, _) = []
+uncoverTile (boardx:boardxs) (1, y) = (uncoverTileRow boardx y):boardxs
+uncoverTile (boardx:boardxs) (x, y) = boardx:(uncoverTile boardxs (x-1, y))
 
 buncoverTile :: InternalBoard -> PlayerBoard -> BoardSize -> Coordinates -> PlayerBoard
-buncoverTile board revealedBoard (a,b) (x,y) = 
-	if x /= 0 && x /= (a+1) && y /= 0 && y /= (b+1) && findTile revealedBoard (x,y) == '#'
+buncoverTile board revealedBoard (a, b) (x, y) = 
+	if x /= 0 && x /= (a+1) && y /= 0 && y /= (b+1) && findTile revealedBoard (x, y) == '#'
 		then if findTile board (x,y) == '_'
-			then uncoverAdjacentTiles board (uncoverTile revealedBoard (x,y)) (a,b) (createListOfAdjacentTiles (x,y))
-			else (uncoverTile revealedBoard (x,y))
+			then uncoverAdjacentTiles board (uncoverTile revealedBoard (x, y)) (a, b) (createListOfAdjacentTiles (x, y))
+			else (uncoverTile revealedBoard (x, y))
 		else revealedBoard
 --
 
@@ -227,17 +227,17 @@ playTurn :: String -> InternalBoard -> PlayerBoard -> Difficulty -> Coordinates 
 playTurn action board revealedBoard difficulty (x,y) =
 	case action of
 		"uncover"	->	do
-			buncoverTile board revealedBoard ((rows difficulty),(cols difficulty)) (x,y)
+			buncoverTile board revealedBoard (rows difficulty, cols difficulty) (x, y)
 		"flag"		->	do
-			flag revealedBoard (x,y)
+			flag revealedBoard (x, y)
 		otherwise	->	do
-			unflag revealedBoard (x,y)
+			unflag revealedBoard (x, y)
 
 getUserInputAndMakeSureIt'sNotShittyInput :: Difficulty -> IO [[Char]]
 getUserInputAndMakeSureIt'sNotShittyInput difficulty = do
 	coords <- getLine
 	let coords' = splitOn " " coords
-	if length coords' == 3 && ((coords' !! 0) :: String) `elem` ["flag","unflag","uncover"] && 
+	if length coords' == 3 && ((coords' !! 0) :: String) `elem` ["flag", "unflag", "uncover"] && 
 		(read (coords' !! 1) :: Int) `elem` [1..(cols difficulty)] && (read (coords' !! 2) :: Int) `elem` [1..(rows difficulty)]
 		then return coords'
 		else if length coords' == 1 && ((coords' !! 0) :: String) == "playMove"
@@ -291,12 +291,12 @@ playGame board revealedBoard difficulty = do
 -- Building board, placing mines
 randPerm :: StdGen -> [Coordinates] -> [Coordinates]
 randPerm _ []   = []
-randPerm gen xs = let (n,newGen) = randomR (0,length xs -1) gen
+randPerm gen xs = let (n,newGen) = randomR (0, length xs -1) gen
                       front = xs !! n
                   in  front : randPerm newGen (take n xs ++ drop (n+1) xs)
 
 sortGT :: Coordinates -> Coordinates -> Ordering
-sortGT (a1,b1) (a2,b2) = 
+sortGT (a1, b1) (a2, b2) = 
   case compare a1 a2 of
     EQ -> compare b2 b1
     LT -> GT
@@ -311,21 +311,21 @@ groupByRow xs = groupBy (\x y -> fst x == fst y) xs
 placeMinesRow :: [Coordinates] -> PositionInRow -> Row
 placeMinesRow _ 0 = []
 placeMinesRow [] y = noMine:(placeMinesRow [] (y-1))
-placeMinesRow ((mx,my):ms) y = 
+placeMinesRow ((mx, my):ms) y = 
 	if my == y
 		then mine:(placeMinesRow ms (y-1))
-		else noMine:(placeMinesRow ((mx,my):ms) (y-1))
+		else noMine:(placeMinesRow ((mx, my):ms) (y-1))
 
 placeMines :: [[Coordinates]] -> Coordinates -> InternalBoard
-placeMines _ (0,_) = []
-placeMines [] (x,y) = (placeMinesRow [] y):(placeMines [] ((x-1),y))
-placeMines (((rowMx,rowMy):rowMs):ms) (x,y) = 
+placeMines _ (0, _) = []
+placeMines [] (x, y) = (placeMinesRow [] y):(placeMines [] ((x-1), y))
+placeMines (((rowMx, rowMy):rowMs):ms) (x, y) = 
 	if rowMx == x
-		then (placeMinesRow ((rowMx,rowMy):rowMs) y):(placeMines ms ((x-1),y))
-		else (placeMinesRow [] y):(placeMines (((rowMx,rowMy):rowMs):ms) ((x-1),y))
+		then (placeMinesRow ((rowMx,rowMy):rowMs) y):(placeMines ms ((x-1), y))
+		else (placeMinesRow [] y):(placeMines (((rowMx,rowMy):rowMs):ms) ((x-1), y))
 
 generateRandomBoard :: StdGen -> Difficulty -> InternalBoard
-generateRandomBoard gen difficulty = placeMines ms ((rows difficulty),(cols difficulty))
+generateRandomBoard gen difficulty = placeMines ms (rows difficulty, cols difficulty)
 	where ms = getRandomMinePositions gen possiblePositions (mines difficulty)
 		where possiblePositions = allPossibleBoardPositions (rows difficulty) (cols difficulty)
 
@@ -417,10 +417,10 @@ findFirstHiddenTileRows b x y =
 			else findFirstHiddenTileRows b (x+1) y
 
 findFirstHiddenTile :: PlayerBoard -> BoardSize -> Coordinates
-findFirstHiddenTile (b:bs) (x,y) = 
+findFirstHiddenTile (b:bs) (x, y) = 
 	if (findFirstHiddenTileRows b 1 y) /= 0
-		then (x,(y+1)-findFirstHiddenTileRows b 1 y)
-		else (findFirstHiddenTile bs ((x-1,y)))
+		then (x, (y+1)-findFirstHiddenTileRows b 1 y)
+		else (findFirstHiddenTile bs ((x-1, y)))
 
 --playMove :: InternalBoard -> PlayerBoard -> Difficulty -> (PlayerBoard,Coordinates)
 playMove :: InternalBoard -> PlayerBoard -> Difficulty -> PlayerBoard
@@ -441,9 +441,9 @@ main = do
 	-- Game setup
 	gen <- getStdGen -- random number generator seed
 	let difficulty = beginner
-	let initialBoard = initBoard (rows difficulty,cols difficulty)
+	let initialBoard = initBoard (rows difficulty, cols difficulty)
 	let minesBoard = generateRandomBoard gen difficulty
-	let internalBoard = computeNumbersFirst minesBoard (rows difficulty,cols difficulty)
+	let internalBoard = computeNumbersFirst minesBoard (rows difficulty, cols difficulty)
 
 	-- Play game!
 	putStrLn ""
