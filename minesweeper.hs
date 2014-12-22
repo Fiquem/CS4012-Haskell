@@ -166,10 +166,10 @@ buncoverTile board revealedBoard (a, b) (x, y) =
 
 -- Flag/unflag a hidden tile
 flag :: PlayerBoard -> Coordinates -> PlayerBoard
-flag = doAction '#' flagged
+flag = doAction hidden flagged
 
 unflag :: PlayerBoard -> Coordinates -> PlayerBoard
-unflag = doAction 'F' hidden
+unflag = doAction flagged hidden
 
 doAction :: Char -> Char -> PlayerBoard -> Coordinates -> PlayerBoard
 doAction _ _ [] _ = []
