@@ -1,4 +1,5 @@
 module Minesweeper.Board (
+  Board,
   generateRandomBoard,
   showBoard,
   getCell,
@@ -21,7 +22,7 @@ showBoard b = intercalate "\n" (map concat $ map (map show) b)
 getCell :: Board -> (Int, Int) -> Cell
 getCell board (x, y) = board!!(y-1)!!(x-1)
 
-replaceCell :: Board -> Cell -> (Int, Int) -> Board
+replaceCell :: Board -> (Int, Int) -> Cell -> Board
 replaceCell oldBoard newCell (x, y) = newBoard
   where
     newBoard = bx ++ [newRow] ++ bys 
@@ -60,7 +61,7 @@ placeMinesAtCoordinates :: Board -> [(Int, Int)] -> Board
 placeMinesAtCoordinates board [] = board
 placeMinesAtCoordinates board (coord:coords) = newBoard
   where
-    newBoard = replaceCell modifiedBoard newCell coord
+    newBoard = replaceCell modifiedBoard coord newCell 
     newCell = createCell { hasMine = True }
     modifiedBoard = placeMinesAtCoordinates board coords
 
