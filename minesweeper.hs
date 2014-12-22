@@ -181,7 +181,7 @@ doAction c c2 (boardx:boardxs) (x, y) =
 	if findTile (boardx:boardxs) (x, y) == c
 		then boardx : (doAction c c2 boardxs (x-1, y))
 		else (boardx:boardxs)
-		
+
 doActionRow :: Char -> Row -> PositionInRow -> Row
 doActionRow _ [] _ = []
 doActionRow c (rx:rxs) 1 = c : rxs
@@ -252,19 +252,18 @@ playGame board revealedBoard difficulty = do
 	putStrLn ""
 
 	-- Make a move
-	let revealedBoard' = 
+	--let revealedBoard' = 
+		--if action == "playMove"
+		--	then playMove board revealedBoard difficulty
+		--	else playTurn action board revealedBoard difficulty (x,y)
+
+	let (revealedBoard',(somethingx,somethingy)) = 
 		if action == "playMove"
 			then playMove board revealedBoard difficulty
-			else playTurn action board revealedBoard difficulty (x,y)
+			else (playTurn action board revealedBoard difficulty (x,y),(0,0))
 
-	--let (revealedBoard',(somethingx,somethingy)) = 
-	--	if action == "playMove"
-	--		then playMove board revealedBoard difficulty
-	--		else (playTurn action board revealedBoard difficulty (x,y),(0,0))
-
-	--print somethingx
-	--print somethingy
-	--print "LOOK AT THIS"
+	print somethingx
+	print somethingy
 
 	-- Show game state
 	let currentBoard = showCurrentBoard board revealedBoard'
@@ -352,7 +351,7 @@ isMineRows (x:xs) (a0:a1:as) (_:'#':bs) (c0:c1:cs) y = isMineRows xs (a1:as) ('#
 isMineRows (x:xs) (a0:a1:as) (b0:b1:bs) (c0:c1:cs) 1 = 
 	if x `notElem` ['_','o'] && digitToInt x == numAdjUnrevealedTiles [a0,a1,' ',b0,' ',c0,c1,' '] && (findCoordOfAdjacentCoveredTile a0 a1 ' ' b0 ' ' c0 c1 ' ' 1) /= (0,0)
 		then (True,findCoordOfAdjacentCoveredTile a0 a1 ' ' b0 ' ' c0 c1 ' ' 1)
-		else (False,(4,3))
+		else (False,(4,numAdjUnrevealedTiles [a0,a1,' ',b0,' ',c0,c1,' ']))
 isMineRows (x:xs) (a0:a1:a2:as) (b0:b1:b2:bs) (c0:c1:c2:cs) y = 
 	if x `notElem` ['_','o'] && digitToInt x == numAdjUnrevealedTiles [a0,a1,a2,b0,b2,c0,c1,c2] && (findCoordOfAdjacentCoveredTile a0 a1 a2 b0 b2 c0 c1 c2 y) /= (0,0)
 		then (True,findCoordOfAdjacentCoveredTile a0 a1 a2 b0 b2 c0 c1 c2 y)
@@ -386,7 +385,7 @@ isMineFirst (b:bs) (h:hs) (1,y) = isMineRowsFirst b (makeStr ' ' y) h (makeStr '
 isMineFirst (b0:b1:bs) (h0:h1:hs) (x,y) = 
 	if (isMineRowsFirst b0 (makeStr ' ' y) h0 h1 y) == (True,coords)
 		then (True,addCoords coords (x,0))
-		else isMine (b0:b1:bs) (h0:h1:bs) ((x-1),y)
+		else isMine (b0:b1:bs) (h0:h1:hs) ((x-1),y)
 	where (_,coords) = (isMineRowsFirst b0 (makeStr ' ' y) h0 h1 y)
 
 --showCoords :: Coordinates -> String
@@ -412,17 +411,17 @@ findFirstHiddenTile (b:bs) (x, y) =
 		then (x, (y+1)-findFirstHiddenTileRows b 1 y)
 		else (findFirstHiddenTile bs ((x-1, y)))
 
---playMove :: InternalBoard -> PlayerBoard -> Difficulty -> (PlayerBoard,Coordinates)
-playMove :: InternalBoard -> PlayerBoard -> Difficulty -> PlayerBoard
+playMove :: InternalBoard -> PlayerBoard -> Difficulty -> (PlayerBoard,Coordinates)
+--playMove :: InternalBoard -> PlayerBoard -> Difficulty -> PlayerBoard
 playMove board revealedBoard difficulty = 
 	-- Initial move
 	--playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1)))
 	-- Flag known mine
 	if (isMineFirst board revealedBoard (rows difficulty,cols difficulty)) == (True,coords)
-		--then (playTurn "flag" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords coords (1,1))),coords)
-		--else (playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1))),coords)
-		then playTurn "flag" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords coords (1,1)))
-		else playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1)))
+		then (playTurn "flag" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords coords (1,1))),coords)
+		else (playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1))),coords)
+		--then playTurn "flag" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords coords (1,1)))
+		--else playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1)))
 	where (_,coords) = (isMineFirst board revealedBoard (rows difficulty,cols difficulty))
 --
 
