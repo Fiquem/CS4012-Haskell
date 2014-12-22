@@ -165,37 +165,27 @@ buncoverTile board revealedBoard (a, b) (x, y) =
 --
 
 -- Flag/unflag a hidden tile
-flagRow :: Row -> PositionInRow -> Row
-flagRow [] _ = []
-flagRow (rowx:rowxs) 1 = flagged:rowxs
-flagRow (rowx:rowxs) x = rowx:(flagRow rowxs (x-1))
-
 flag :: PlayerBoard -> Coordinates -> PlayerBoard
-flag [] (_,_) = []
-flag (boardx:boardxs) (1,y) = 
-	if findTile (boardx:boardxs) (1,y) == '#'
-		then (flagRow boardx y):boardxs
-		else (boardx:boardxs)
-flag (boardx:boardxs) (x,y) = 
-	if findTile (boardx:boardxs) (x,y) == '#'
-		then boardx:(flag boardxs ((x-1),y))
-		else (boardx:boardxs)	
-
-unflagRow :: Row -> PositionInRow -> Row
-unflagRow [] _ = []
-unflagRow (rowx:rowxs) 1 = hidden:rowxs
-unflagRow (rowx:rowxs) x = rowx:(unflagRow rowxs (x-1))
+flag = doAction '#' flagged
 
 unflag :: PlayerBoard -> Coordinates -> PlayerBoard
-unflag [] (_,_) = []
-unflag (boardx:boardxs) (1,y) = 
-	if findTile (boardx:boardxs) (1,y) == 'F'
-		then (unflagRow boardx y):boardxs
+unflag = doAction 'F' hidden
+
+doAction :: Char -> Char -> PlayerBoard -> Coordinates -> PlayerBoard
+doAction _ _ [] _ = []
+doAction c c2 (boardx:boardxs) (1, y) =
+	if findTile (boardx:boardxs) (1, y) == c
+		then (doActionRow c2 boardx y) : boardxs
 		else (boardx:boardxs)
-unflag (boardx:boardxs) (x,y) = 
-	if findTile (boardx:boardxs) (x,y) == 'F'
-		then boardx:(unflag boardxs ((x-1),y))
+doAction c c2 (boardx:boardxs) (x, y) =
+	if findTile (boardx:boardxs) (x, y) == c
+		then boardx : (doAction c c2 boardxs (x-1, y))
 		else (boardx:boardxs)
+		
+doActionRow :: Char -> Row -> PositionInRow -> Row
+doActionRow _ [] _ = []
+doActionRow c (rx:rxs) 1 = c : rxs
+doActionRow c (rx:rxs) x = rx : (doActionRow c rxs (x-1))
 --
 
 -- Endgame conditions
