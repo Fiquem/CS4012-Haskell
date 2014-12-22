@@ -61,6 +61,7 @@ showCurrentBoardRows (b:bs) (h:hs) =
 		'#' -> h:(showCurrentBoardRows bs hs)
 		'F' -> h:(showCurrentBoardRows bs hs)
 		' ' -> b:(showCurrentBoardRows bs hs)
+		otherwise -> b:(showCurrentBoardRows bs hs)
 
 showCurrentBoard :: InternalBoard -> PlayerBoard -> PlayerBoard
 showCurrentBoard [] [] = []
