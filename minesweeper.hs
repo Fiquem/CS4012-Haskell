@@ -331,6 +331,13 @@ numAdjUnrevealedTiles (x:xs) =
 		then 0 + (numAdjUnrevealedTiles xs)
 		else 1 + (numAdjUnrevealedTiles xs)
 
+numAdjFlaggedTiles :: [Char] -> Int
+numAdjFlaggedTiles [] = 0
+numAdjFlaggedTiles (x:xs) = 
+	if x /= 'F'
+		then 0 + (numAdjFlaggedTiles xs)
+		else 1 + (numAdjFlaggedTiles xs)
+
 findCoordOfAdjacentCoveredTile :: Tile -> Tile -> Tile -> Tile -> Tile -> Tile -> Tile -> Tile -> Int -> Coordinates
 findCoordOfAdjacentCoveredTile a b c d e f g h y
 	| a == hidden	= (1,y+1)
@@ -387,6 +394,50 @@ isMineFirst (b0:b1:bs) (h0:h1:hs) (x,y) =
 		else isMine (b0:b1:bs) (h0:h1:hs) ((x-1),y)
 	where (_,coords) = (isMineRowsFirst b0 (makeStr ' ' y) h0 h1 y)
 
+isSafeMoveRows :: InternalRow -> RowAbove -> Row -> RowBelow -> RowSize -> (Bool,Coordinates)
+isSafeMoveRows _ _ _ _ 0 = (False,(4,1))
+isSafeMoveRows _ _ (_:'#':_) _ 1 = (False,(4,2))
+isSafeMoveRows (x:xs) (a0:a1:as) (_:'#':bs) (c0:c1:cs) y = isSafeMoveRows xs (a1:as) ('#':bs) (c1:cs) (y-1)
+isSafeMoveRows (x:xs) (a0:a1:as) (b0:b1:bs) (c0:c1:cs) 1 = 
+	if x `notElem` ['_','o'] && digitToInt x == numAdjFlaggedTiles [a0,a1,' ',b0,' ',c0,c1,' '] && (findCoordOfAdjacentCoveredTile a0 a1 ' ' b0 ' ' c0 c1 ' ' 1) /= (0,0)
+		then (True,findCoordOfAdjacentCoveredTile a0 a1 ' ' b0 ' ' c0 c1 ' ' 1)
+		else (False,(4,numAdjFlaggedTiles [a0,a1,' ',b0,' ',c0,c1,' ']))
+isSafeMoveRows (x:xs) (a0:a1:a2:as) (b0:b1:b2:bs) (c0:c1:c2:cs) y = 
+	if x `notElem` ['_','o'] && digitToInt x == numAdjFlaggedTiles [a0,a1,a2,b0,b2,c0,c1,c2] && (findCoordOfAdjacentCoveredTile a0 a1 a2 b0 b2 c0 c1 c2 y) /= (0,0)
+		then (True,findCoordOfAdjacentCoveredTile a0 a1 a2 b0 b2 c0 c1 c2 y)
+		else isSafeMoveRows xs (a1:a2:as) (b1:b2:bs) (c1:c2:cs) (y-1)
+
+isSafeMoveRowsFirst :: InternalRow -> RowAbove -> Row -> RowBelow -> RowSize -> (Bool,Coordinates)
+isSafeMoveRowsFirst _ _ _ _ 0 = (False,(3,1))
+isSafeMoveRowsFirst _ _ ('#':_) _ 1 = (False,(3,2))
+isSafeMoveRowsFirst (x:xs) (a0:as) ('#':bs) (c0:cs) y = isSafeMoveRows xs (a0:as) ('#':bs) (c0:cs) (y-1)
+isSafeMoveRowsFirst (x:xs) (a:as) (' ':bs) (c:cs) 1 = 
+	if x `notElem` ['_','o'] && digitToInt x == numAdjFlaggedTiles [' ',a,' ',' ',' ',' ',c,' '] && (findCoordOfAdjacentCoveredTile ' ' a ' ' ' ' ' ' ' ' c ' ' 1) /= (0,0)
+		then (True,findCoordOfAdjacentCoveredTile ' ' a ' ' ' ' ' ' ' ' c ' ' 1)
+		else (False,(3,3))
+isSafeMoveRowsFirst (x:xs) (a0:a1:as) (b0:b1:bs) (c0:c1:cs) y = 
+	if x `notElem` ['_','o'] && digitToInt x == numAdjFlaggedTiles [' ',a0,a1,' ',b1,' ',c0,c1] && (findCoordOfAdjacentCoveredTile  ' ' a0 a1 ' ' b1 ' ' c0 c1 y) /= (0,0)
+		then (True,findCoordOfAdjacentCoveredTile ' ' a0 a1 ' ' b1 ' ' c0 c1 y)
+		else isSafeMoveRows xs (a0:a1:as) (b0:b1:bs) (c0:c1:cs) (y-1)
+
+isSafeMove :: InternalBoard -> PlayerBoard -> BoardSize -> (Bool,Coordinates)
+isSafeMove _ _ (0,_) = (False,(2,2))
+isSafeMove (b0:b1:bs) (h0:h1:hs) (1,y) = isSafeMoveRowsFirst b1 h0 h1 (makeStr ' ' y) y
+isSafeMove (b0:b1:b2:bs) (h0:h1:h2:hs) (x,y) = 
+	if (isSafeMoveRowsFirst b1 h0 h1 h2 y) == (True,coords)
+		then (True,addCoords coords (x,0))
+		else isSafeMove (b1:b2:bs) (h1:h2:hs) ((x-1),y)
+	where (_,coords) = (isSafeMoveRowsFirst b1 h0 h1 h2 y)
+
+isSafeMoveFirst :: InternalBoard -> PlayerBoard -> BoardSize -> (Bool,Coordinates)
+isSafeMoveFirst _ _ (0,_) = (False,(1,1))
+isSafeMoveFirst (b:bs) (h:hs) (1,y) = isSafeMoveRowsFirst b (makeStr ' ' y) h (makeStr ' ' y) y
+isSafeMoveFirst (b0:b1:bs) (h0:h1:hs) (x,y) = 
+	if (isSafeMoveRowsFirst b0 (makeStr ' ' y) h0 h1 y) == (True,coords)
+		then (True,addCoords coords (x,0))
+		else isSafeMove (b0:b1:bs) (h0:h1:hs) ((x-1),y)
+	where (_,coords) = (isSafeMoveRowsFirst b0 (makeStr ' ' y) h0 h1 y)
+
 --showCoords :: Coordinates -> String
 --showCoords (x,y) = [(intToDigit x)]++" "++[(intToDigit y)]
 
@@ -413,15 +464,18 @@ findFirstHiddenTile (b:bs) (x, y) =
 --playMove :: InternalBoard -> PlayerBoard -> Difficulty -> (PlayerBoard,Coordinates)
 playMove :: InternalBoard -> PlayerBoard -> Difficulty -> PlayerBoard
 playMove board revealedBoard difficulty = 
-	-- Initial move
-	--playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1)))
-	-- Flag known mine
 	if (isMineFirst board revealedBoard (rows difficulty,cols difficulty)) == (True,coords)
 		--then (playTurn "flag" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords coords (1,1))),coords)
-		--else (playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1))),coords)
+		--else if (isSafeMoveFirst board revealedBoard (rows difficulty, cols difficulty)) == (True,coords')
+		--	then (playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords coords' (1,1))),coords')
+		--	else (playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1))),coords')
 		then playTurn "flag" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords coords (1,1)))
-		else playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1)))
-	where (_,coords) = (isMineFirst board revealedBoard (rows difficulty,cols difficulty))
+		else if (isSafeMoveFirst board revealedBoard (rows difficulty, cols difficulty)) == (True,coords')
+			then playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords coords' (1,1)))
+			else playTurn "uncover" board revealedBoard difficulty (subCoords (rows difficulty,cols difficulty) (subCoords (findFirstHiddenTile revealedBoard (rows difficulty,cols difficulty)) (1,1)))
+	where 
+		(_,coords) = (isMineFirst board revealedBoard (rows difficulty,cols difficulty))
+		(_,coords') = (isSafeMoveFirst board revealedBoard (rows difficulty,cols difficulty))
 --
 
 main :: IO()
