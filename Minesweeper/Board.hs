@@ -31,7 +31,7 @@ showTrueBoard b = intercalate "\n" (map concat $ map (map showTrueCell) b)
 -- Access Board Cell Functions
 --
 getCell :: Board -> (Int, Int) -> Cell
-getCell board (x, y) = board!!(y-1)!!(x-1)
+getCell board (x, y) = board!!(x-1)!!(y-1)
 
 getCells :: Board -> [(Int, Int)] -> [Cell]
 getCells board [] = []
@@ -44,8 +44,8 @@ replaceCell :: Board -> (Int, Int) -> Cell -> Board
 replaceCell oldBoard (x, y) newCell = newBoard
   where
     newBoard = bx ++ [newRow] ++ bys 
-    (bx, _:bys) = splitAt (y-1) oldBoard
-    newRow = replaceCellAtPosition (oldBoard!!(y-1)) newCell x
+    (bx, _:bys) = splitAt (x-1) oldBoard
+    newRow = replaceCellAtPosition (oldBoard!!(x-1)) newCell y
 
 replaceCellAtPosition :: [Cell] -> Cell -> Int -> [Cell]
 replaceCellAtPosition oldList cell position = rx ++ [cell] ++ rys

@@ -78,8 +78,8 @@ playGame board difficulty = do
   -- User input
   input <- getUserInputAndMakeSureIt'sNotShittyInput difficulty
   let action = (input !! 0)
-  let x = read (input !! 2) :: Int
-  let y = read (input !! 1) :: Int
+  let x = read (input !! 1) :: Int
+  let y = read (input !! 2) :: Int
   putStrLn ""
 
   -- Make a move
@@ -101,7 +101,7 @@ mainCLI :: IO()
 mainCLI = do
   -- Game setup
   gen <- newStdGen -- random number generator seed
-  let difficulty = beginner
+  let difficulty = expert
   let board = generateRandomBoard gen difficulty
 
   putStrLn $ showBoard board
