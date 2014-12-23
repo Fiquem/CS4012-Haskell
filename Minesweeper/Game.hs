@@ -42,7 +42,7 @@ unflag board coord = replaceCell board coord newCell
   where newCell = (getCell board coord) { flagged = False }
 
 isWin :: Board -> Bool
-isWin board = all (\x -> (not (hasMine x)) && (revealed x)) (getAllCells board)
+isWin board = all (\x -> if (revealed x) then (not (hasMine x)) else (hasMine x)) (getAllCells board)
 
 isLose :: Board -> Bool
 isLose board = any (\x -> (hasMine x) && (revealed x)) (getAllCells board)
