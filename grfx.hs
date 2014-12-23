@@ -12,7 +12,7 @@ main
 
 gui :: IO ()
 gui = do 
-    f <- frame [text := "WELCOME TO THE DANGER ZONE"] 
+    f <- frame [text := "WELCOME TO THE DANGER ZONE", position := pt 100 100] 
 
     --Buttons
     begin   <- button f [text := "Beginner", on command := (close f >> letsStartTheGameShallWe beginner)]
@@ -45,7 +45,7 @@ letsStartTheGameShallWe difficulty = do
     
 winlose :: String -> IO()
 winlose txt = do
-    f <- frame [text := txt]
+    f <- frame [text := txt, position := pt 100 100]
     b <- button f [text := "Play Again?", on command := (close f >> gui)]
     q <- button f [text := "Quit", on command := close f]
     set f [layout := column 5 $ [floatCentre $ widget b, floatCentre $ widget q], clientSize := sz 600 100]
@@ -54,7 +54,7 @@ playingTheGame :: InternalBoard -> PlayerBoard -> Difficulty -> String -> String
 playingTheGame board revealedBoard difficulty txtA txtB txtC = do
     --Boards = [Rows] = [ [Tiles] ] = [ [Char] ]
     let fullBoard = showCurrentBoard board revealedBoard
-    f <- frame [text := ("Minesweeper: " ++ txtA)]
+    f <- frame [text := ("Minesweeper: " ++ txtA), position := pt 100 100]
     
     p <- panel f []
      
