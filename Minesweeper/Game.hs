@@ -17,6 +17,12 @@ unflag :: Board -> (Int, Int) -> Board
 unflag board coord = replaceCell board coord newCell
   where newCell = (getCell board coord) { flagged = False }
 
+isWin :: Board -> Bool
+isWin board = all (\x -> (not (hasMine x)) && (revealed x)) (getAllCells board)
+
+isLose :: Board -> Bool
+isLose board = any (\x -> (hasMine x) && (revealed x)) (getAllCells board)
+
 main :: IO()
 main = do
   -- Game setup
@@ -25,5 +31,5 @@ main = do
   let board = generateRandomBoard gen difficulty
 
   putStrLn $ showBoard board
-
+  putStrLn $ "\n"
   putStrLn $ showTrueBoard board

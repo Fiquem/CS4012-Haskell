@@ -4,6 +4,7 @@ module Minesweeper.Board (
   showBoard,
   showTrueBoard,
   getCell,
+  getAllCells,
   replaceCell
 ) where
 
@@ -30,6 +31,9 @@ getCell board (x, y) = board!!(y-1)!!(x-1)
 getCells :: Board -> [(Int, Int)] -> [Cell]
 getCells board [] = []
 getCells board (coord:coords) = (getCell board coord) : getCells board coords
+
+getAllCells :: Board -> [Cell]
+getAllCells board = concat board
 
 replaceCell :: Board -> (Int, Int) -> Cell -> Board
 replaceCell oldBoard (x, y) newCell = newBoard
