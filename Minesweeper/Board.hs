@@ -4,10 +4,10 @@ module Minesweeper.Board (
   showBoard,
   showTrueBoard,
   getCell,
-  replaceCell,
-  calculateCellAdjacency
+  replaceCell
 ) where
 
+import Debug.Trace
 import Data.List
 import System.Random
 import Minesweeper.Difficulty
@@ -36,34 +36,37 @@ replaceCell oldBoard (x, y) newCell = newBoard
   where
     newBoard = bx ++ [newRow] ++ bys 
     (bx, _:bys) = splitAt (y-1) oldBoard
-    newRow = replaceCellAtPosition (oldBoard!!(y-1)) newCell x  
+    newRow = replaceCellAtPosition (oldBoard!!(y-1)) newCell x
 
 replaceCellAtPosition :: [Cell] -> Cell -> Int -> [Cell]
 replaceCellAtPosition oldList cell position = rx ++ [cell] ++ rys
     where (rx, _:rys) = splitAt (position-1) oldList
 
 generateRandomBoard :: StdGen -> Difficulty -> Board
-generateRandomBoard gen difficulty = calculateAdjacency minedBoard (rows difficulty) (cols difficulty)
+generateRandomBoard gen difficulty = calculateAdjacency minedBoard (cols difficulty) (rows difficulty)
   where 
     minedBoard = placeMines gen difficulty emptyBoard
-    emptyBoard = createBoardOfCells (rows difficulty) (cols difficulty)
+    emptyBoard = createBoardOfCells (cols difficulty) (rows difficulty)
 
 placeMines :: StdGen -> Difficulty -> Board -> Board
 placeMines gen difficulty board = placeMinesAtCoordinates board mineCoordinates 
   where
     mineCoordinates = getRandomMinePositions gen possiblePositions (mines difficulty)
-    possiblePositions = allPossibleBoardPositions (rows difficulty) (cols difficulty)
+    possiblePositions = allPossibleBoardPositions (cols difficulty) (rows difficulty)
 
--- TODO
 calculateAdjacency :: Board -> Width -> Height -> Board
-calculateAdjacency board width height = calculateCellsAdjacency board (allPossibleBoardPositions width height) width height
+calculateAdjacency board width height = calculateCellsAdjacency board allPositions width height
+  where
+    allPositions = allPossibleBoardPositions width height
 
 calculateCellsAdjacency :: Board -> [(Int, Int)] -> Width -> Height -> Board
-calculateCellsAdjacency board [] _ _ = []
+calculateCellsAdjacency board [] _ _ = board
 calculateCellsAdjacency board (coord:coords) width height = newBoard
   where
     newBoard = replaceCell modifiedBoard coord newCell
-    newCell = (getCell board coord) { adjacentMines = (calculateCellAdjacency modifiedBoard coord width height)}
+    newCell = createCell { hasMine = (hasMine currentCell), adjacentMines = cellAdjacency }
+    cellAdjacency = calculateCellAdjacency modifiedBoard coord width height
+    currentCell = getCell modifiedBoard coord
     modifiedBoard = calculateCellsAdjacency board coords width height
 
 calculateCellAdjacency :: Board -> (Int, Int) -> Width -> Height -> Int
@@ -93,9 +96,9 @@ placeMinesAtCoordinates board (coord:coords) = newBoard
 getRandomMinePositions :: StdGen -> [(Int, Int)] -> Int -> [(Int, Int)]
 getRandomMinePositions gen possiblePositions numMines = take numMines $ randPerm gen possiblePositions
 
-allPossibleBoardPositions :: Height -> Width -> [(Int, Int)]
-allPossibleBoardPositions 0 _ = []
-allPossibleBoardPositions rowNum rowLen = allPossibleBoardPositions (rowNum-1) rowLen ++ zip (replicate rowLen rowNum) (cycle [1..rowLen])
+allPossibleBoardPositions :: Width -> Height -> [(Int, Int)]
+allPossibleBoardPositions _ 0 = []
+allPossibleBoardPositions width height = allPossibleBoardPositions width (height-1) ++ zip (replicate width height) (cycle [1..width])
 
 -- Randomly shuffles a list
 randPerm :: StdGen -> [(Int, Int)] -> [(Int, Int)]

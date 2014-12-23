@@ -9,7 +9,7 @@ data Cell = Cell { hasMine :: Bool
 instance Show Cell where
   show cell
     | flagged cell        = " F "
-    | not (revealed cell) = " _ "
+    | not (revealed cell) = " # "
     | hasMine cell        = " * "
     | otherwise           = " " ++ show (adjacentMines cell) ++ " "
 

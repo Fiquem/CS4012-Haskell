@@ -20,7 +20,7 @@ unflag board coord = replaceCell board coord newCell
 main :: IO()
 main = do
   -- Game setup
-  gen <- getStdGen -- random number generator seed
+  gen <- newStdGen -- random number generator seed
   let difficulty = beginner
   let board = generateRandomBoard gen difficulty
 
