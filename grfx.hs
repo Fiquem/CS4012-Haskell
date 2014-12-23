@@ -4,13 +4,11 @@ import Data.Char
 import System.Random
 import Minesweeper
 import Graphics.UI.WX
+import Graphics.UI.WXCore hiding (Row)
 
 main :: IO ()
 main
   = start gui
-
-testcommand :: String
-testcommand = "command successful"
 
 gui :: IO ()
 gui = do 
@@ -37,49 +35,85 @@ gui = do
         
 letsStartTheGameShallWe :: Difficulty -> IO()
 letsStartTheGameShallWe difficulty = do
-    
     gen <- getStdGen -- random number generator seed
     let initialBoard = initBoard (rows difficulty,cols difficulty)
     let minesBoard = generateRandomBoard gen difficulty
     let internalBoard = computeNumbersFirst minesBoard (rows difficulty,cols difficulty)
     
     playingTheGame internalBoard initialBoard difficulty
+
     
-playingTheGame ::InternalBoard -> PlayerBoard -> Difficulty -> IO()
-playingTheGame board maskBoard difficulty = do
+winlose :: String -> IO()
+winlose txt = do
+    f <- frame [text := txt]
+    b <- button f [text := "Play Again?", on command := (close f >> gui)]
+    q <- button f [text := "Quit", on command := close f]
+    set f [layout := column 5 $ [floatCentre $ widget b, floatCentre $ widget q], clientSize := sz 600 100]
+
+playingTheGame :: InternalBoard -> PlayerBoard -> Difficulty -> IO()
+playingTheGame board revealedBoard difficulty = do
     --Boards = [Rows] = [ [Tiles] ] = [ [Char] ]
+    let fullBoard = showCurrentBoard board revealedBoard
+    f <- frame [text := "Minesweeper"]
     
-    f <- frame [text := "Sweep Them Mines Yo"]
-    let revealedBoard = showCurrentBoard board maskBoard
+    -- use text control as logger
+    textlog <- textCtrl f [wrap := WrapNone, enabled := False] 
+    textCtrlMakeLogActiveTarget textlog
+    logMessage "logging enabled" 
+    
+    p <- panel f []
+    
+    
+    --Extra Buttons
+    wincheck <- button f [text := "isWin", on command := logMessage(checkWinCond board revealedBoard)]
+    printBoard <- button f [text := "Board", on command := logMessage(unlines $ fullBoard)]
     
     --Build Board
-    buttons <- buildboard f difficulty board revealedBoard
+    buttons <- buildboard f p difficulty board revealedBoard fullBoard
     let widgets = buttons2widgets (rows difficulty)buttons
     
-    --Buttons
-    --boardButton     <- button f [text := "Show Board", on command := (logMessage $ unlines $ revealedBoard)]
-    --quit            <- button f [text := "Quit", on command := close f]
     -- specify layout
-    set f
-            [layout := column 0 $
+    set p
+            [layout := margin 0 $ column 0 $
                 widgets
-                , clientSize := sz 500 400
+            ]
+            
+    set f [layout := column 0 $
+                [floatCentre $ widget p
+                , floatTop $ widget wincheck
+                , floatBottom $ widget printBoard
+                ,hfill $ minsize (sz 200 200) $ widget textlog
+                ]   
+                ,clientSize := sz 500 400
             ]
             
     return()
-
-buildboard :: Frame () -> Difficulty -> InternalBoard -> PlayerBoard -> IO[[Button ()]]
-buildboard f dif hidden board= mapM (buildrow f dif hidden board) (zip [1..] board)
     
-buildrow :: Frame () -> Difficulty -> InternalBoard -> PlayerBoard -> (Int,Row) -> IO[Button ()]
-buildrow f dif hidden board (rownumber,row) = mapM (getButton f dif hidden board rownumber) (zip [1..] row)
+checkWinCond :: InternalBoard -> PlayerBoard -> String
+checkWinCond a b = 
+    if (isWin a b) then "Win Condition Reached"
+    else "Win Condition Not Reached"
 
-getButton :: Frame () -> Difficulty -> InternalBoard -> PlayerBoard -> Int -> (Int,Tile) -> IO(Button ())
-getButton f dif hidden board rownumber(colnumber,tile) = smallButton f [
-                                                    text := [tile]
-                                                    , on command := ( close f >> playingTheGame hidden (playTurn "uncover" hidden board dif (rownumber,colnumber)) dif)
-                                                    --, on clickRight := (playingTheGame f hidden (playTurn "flag" hidden board dif (rownumber,colnumber) dif)
-                                                    ]
+buildboard :: Frame () -> Panel () -> Difficulty -> InternalBoard -> PlayerBoard -> PlayerBoard -> IO[[Button ()]]
+buildboard f p dif hidden board full= mapM (buildrow f p dif hidden board) (zip [1..] full)
+    
+buildrow :: Frame () -> Panel () -> Difficulty -> InternalBoard -> PlayerBoard -> (Int,Row) -> IO[Button ()]
+buildrow f p dif hidden board (rownumber,row) = mapM (getButton f p dif hidden board rownumber) (zip [1..] row)
+
+getButton :: Frame () -> Panel () -> Difficulty -> InternalBoard -> PlayerBoard -> Int -> (Int,Tile) -> IO(Button ())
+getButton f p dif hidden board rownumber(colnumber,tile) = 
+    smallButton p [
+                    text := [tile]
+                    , size := sz 30 30
+                    ,on command :=     
+                                    let newBoard = playTurn "uncover" hidden board dif (rownumber,colnumber)
+                                    in if isWin hidden newBoard then close f >> winlose "A WINNER IS YOU"
+                                                                else if isLose hidden newBoard then close f >> winlose "You have shamed us all"
+                                                                else close f >> playingTheGame hidden newBoard dif
+                    --, on command :=  checkForWin f hidden (playTurn "uncover" hidden board dif (rownumber,colnumber)) dif
+                    --, on clickRight := (close f >> checkForWin f hidden (playTurn "flag" hidden board dif (rownumber,colnumber) dif)
+                    ]
+
 
 
 
