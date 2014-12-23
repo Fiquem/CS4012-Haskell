@@ -48,8 +48,8 @@ isLose :: Board -> Bool
 isLose board = any (\x -> (hasMine x) && (revealed x)) (getAllCells board)
 
 -- Game Loop
-playTurn :: String -> Board -> Difficulty -> (Int, Int) -> Board
-playTurn action board difficulty coord =
+playTurn :: String -> Board -> (Int, Int) -> Board
+playTurn action board coord =
   case action of
     "uncover" ->  uncover board coord
     "flag"    ->  flag board coord
@@ -83,7 +83,7 @@ playGame board difficulty = do
   putStrLn ""
 
   -- Make a move
-  let board' = playTurn action board difficulty (x, y)
+  let board' = playTurn action board (x, y)
     --if action == "playMove"
     --  then playMove board difficulty
      -- else playTurn action board difficulty (x, y)
@@ -97,8 +97,8 @@ playGame board difficulty = do
   else if (isWin board') then return "WIN"
   else playGame board' difficulty
 
-main :: IO()
-main = do
+mainCLI :: IO()
+mainCLI = do
   -- Game setup
   gen <- newStdGen -- random number generator seed
   let difficulty = beginner
