@@ -84,9 +84,6 @@ playGame board difficulty = do
 
   -- Make a move
   let board' = playTurn action board difficulty (x, y)
-    --if action == "playMove"
-    --  then playMove board difficulty
-     -- else playTurn action board difficulty (x, y)
 
   -- Show game state
   putStrLn "\nCurrent Board"
@@ -101,7 +98,7 @@ main :: IO()
 main = do
   -- Game setup
   gen <- newStdGen -- random number generator seed
-  let difficulty = beginner
+  let difficulty = expert
   let board = generateRandomBoard gen difficulty
 
   putStrLn $ showBoard board
