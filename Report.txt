@@ -1,0 +1,21 @@
+Solver
+------
+The solver only has 3 moves, which I'll list in order of priority:
+
+	1. Flag obvious mine
+		If there is a numbered tile on the board surrounded by an 
+		amount of concealed tiles equal to that number, flag those 
+		tiles.
+
+	2. Play an unambiguously safe move - the simple version
+		If there is a numbered tile on the board surrounded by an 
+		amount of flagged tiles equal to that number, reveal all 
+		concealed tiles surrounding that numbered tile.
+		This method does not tke into account the 1-2-1 or 1-2-2-1 
+		patterns mentioned on the Minesweeper wiki 'cause man, 
+		fuck that shit. Searching the adjacent tiles of one tile was 
+		hard enough.
+
+	3. Reveal the next available concealed tile
+		If there are no obvious mines to flag or obvious safe tiles 
+		to reveal, reveal the first concealed tile on the board.
