@@ -11,8 +11,27 @@ import Minesweeper.Difficulty
 type GameResult = IO [Char]
 
 uncover :: Board -> (Int, Int) -> Board
-uncover board coord = replaceCell board coord newCell
-  where newCell = (getCell board coord) { revealed = True }
+uncover board coord = finalBoard
+  where
+    finalBoard = if ((numberMines == 0) && (not (revealed oldCell)))
+      then propagateUncover replacedBord coord
+      else replacedBord
+    replacedBord = replaceCell board coord newCell
+    numberMines = adjacentMines oldCell
+    newCell = oldCell { revealed = True }
+    oldCell = getCell board coord
+
+propagateUncover :: Board -> (Int, Int) -> Board
+propagateUncover board coord = uncoverListCells board adjacentCells
+  where
+    adjacentCells = listOfAdjacentTiles coord (length (board!!0)) (length board)
+
+uncoverListCells :: Board -> [(Int, Int)] -> Board
+uncoverListCells board [] = board
+uncoverListCells board (coord:coords) = newBoard
+  where
+    newBoard = uncover modifiedBoard coord
+    modifiedBoard = uncoverListCells board coords
 
 flag :: Board -> (Int, Int) -> Board
 flag board coord = replaceCell board coord newCell

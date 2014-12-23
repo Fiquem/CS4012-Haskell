@@ -5,10 +5,10 @@ module Minesweeper.Board (
   showTrueBoard,
   getCell,
   getAllCells,
-  replaceCell
+  replaceCell,
+  listOfAdjacentTiles
 ) where
 
-import Debug.Trace
 import Data.List
 import System.Random
 import Minesweeper.Difficulty
@@ -18,13 +18,18 @@ type Board = [[Cell]]
 type Width = Int
 type Height = Int
 
+--
+-- Display Board Function
+--
 showBoard :: Board -> String
 showBoard b = intercalate "\n" (map concat $ map (map show) b)
 
 showTrueBoard :: Board -> String
 showTrueBoard b = intercalate "\n" (map concat $ map (map showTrueCell) b)
 
--- TODO: return Maybe Cell
+--
+-- Access Board Cell Functions
+--
 getCell :: Board -> (Int, Int) -> Cell
 getCell board (x, y) = board!!(y-1)!!(x-1)
 
@@ -46,6 +51,8 @@ replaceCellAtPosition :: [Cell] -> Cell -> Int -> [Cell]
 replaceCellAtPosition oldList cell position = rx ++ [cell] ++ rys
     where (rx, _:rys) = splitAt (position-1) oldList
 
+
+-- Generate Board Functions
 generateRandomBoard :: StdGen -> Difficulty -> Board
 generateRandomBoard gen difficulty = calculateAdjacency minedBoard (cols difficulty) (rows difficulty)
   where 
@@ -88,6 +95,7 @@ listOfAdjacentTiles (x, y) width height = filteredList'
 createBoardOfCells :: Width -> Height -> Board
 createBoardOfCells width height = replicate height $ take width $ cycle [createCell]
 
+-- Generate random mine position coordinates
 placeMinesAtCoordinates :: Board -> [(Int, Int)] -> Board
 placeMinesAtCoordinates board [] = board
 placeMinesAtCoordinates board (coord:coords) = newBoard
@@ -96,7 +104,7 @@ placeMinesAtCoordinates board (coord:coords) = newBoard
     newCell = createCell { hasMine = True }
     modifiedBoard = placeMinesAtCoordinates board coords
 
--- Generate random mine position coordinates
+-- choose mine positions by taking first X number of coordinates off randomly shuffled list of all possible coordinates   
 getRandomMinePositions :: StdGen -> [(Int, Int)] -> Int -> [(Int, Int)]
 getRandomMinePositions gen possiblePositions numMines = take numMines $ randPerm gen possiblePositions
 
