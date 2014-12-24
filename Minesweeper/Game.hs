@@ -42,14 +42,14 @@ unflag board coord = replaceCell board coord newCell
   where newCell = (getCell board coord) { flagged = False }
 
 isWin :: Board -> Bool
-isWin board = all (\x -> (not (hasMine x)) && (revealed x)) (getAllCells board)
+isWin board = all (\x -> if (revealed x) then (not (hasMine x)) else (hasMine x)) (getAllCells board)
 
 isLose :: Board -> Bool
 isLose board = any (\x -> (hasMine x) && (revealed x)) (getAllCells board)
 
 -- Game Loop
-playTurn :: String -> Board -> Difficulty -> (Int, Int) -> Board
-playTurn action board difficulty coord =
+playTurn :: String -> Board -> (Int, Int) -> Board
+playTurn action board coord =
   case action of
     "uncover" ->  uncover board coord
     "flag"    ->  flag board coord
@@ -78,12 +78,15 @@ playGame board difficulty = do
   -- User input
   input <- getUserInputAndMakeSureIt'sNotShittyInput difficulty
   let action = (input !! 0)
-  let x = read (input !! 2) :: Int
-  let y = read (input !! 1) :: Int
+  let x = read (input !! 1) :: Int
+  let y = read (input !! 2) :: Int
   putStrLn ""
 
   -- Make a move
-  let board' = playTurn action board difficulty (x, y)
+  let board' = playTurn action board (x, y)
+    --if action == "playMove"
+    --  then playMove board difficulty
+     -- else playTurn action board difficulty (x, y)
 
   -- Show game state
   putStrLn "\nCurrent Board"
@@ -94,8 +97,8 @@ playGame board difficulty = do
   else if (isWin board') then return "WIN"
   else playGame board' difficulty
 
-main :: IO()
-main = do
+mainCLI :: IO()
+mainCLI = do
   -- Game setup
   gen <- newStdGen -- random number generator seed
   let difficulty = expert
