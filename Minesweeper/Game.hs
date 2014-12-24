@@ -7,6 +7,7 @@ import Data.List.Split
 import Minesweeper.Cell
 import Minesweeper.Board
 import Minesweeper.Difficulty
+import Minesweeper.Solver
 
 type GameResult = IO [Char]
 
@@ -47,7 +48,6 @@ isWin board = all (\x -> if (revealed x) then (not (hasMine x)) else (hasMine x)
 isLose :: Board -> Bool
 isLose board = any (\x -> (hasMine x) && (revealed x)) (getAllCells board)
 
--- Game Loop
 playTurn :: String -> Board -> (Int, Int) -> Board
 playTurn action board coord =
   case action of
@@ -55,6 +55,7 @@ playTurn action board coord =
     "flag"    ->  flag board coord
     otherwise ->  unflag board coord
 
+-- Game Lopp
 getUserInputAndMakeSureIt'sNotShittyInput :: Difficulty -> IO [[Char]]
 getUserInputAndMakeSureIt'sNotShittyInput difficulty = do
   coords <- getLine
@@ -83,10 +84,10 @@ playGame board difficulty = do
   putStrLn ""
 
   -- Make a move
-  let board' = playTurn action board (x, y)
-    --if action == "playMove"
-    --  then playMove board difficulty
-     -- else playTurn action board difficulty (x, y)
+  let board' = 
+    if action == "playMove"
+      then autoMove board difficulty
+      else playTurn action board (x, y)
 
   -- Show game state
   putStrLn "\nCurrent Board"
