@@ -11,7 +11,7 @@ autoMove :: Board -> Difficulty -> Board
 autoMove board difficulty = 
   if fst result
     then snd result
-    else board -- uncover board (head $ getUnrevealedCells board) -- reveal next unrevealed cell
+    else uncover board (head $ getUnrevealedCells board) -- reveal next unrevealed cell
   where result = attemptSafeMove board
 
 attemptSafeMove :: Board -> (Bool, Board)
