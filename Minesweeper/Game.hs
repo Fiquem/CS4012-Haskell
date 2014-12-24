@@ -1,9 +1,13 @@
 module Minesweeper.Game (
   playTurn,
   isWin,
-  isLose
+  isLose,
+  uncover,
+  flag,
+  applyToCells
 ) where
 
+import Debug.Trace
 import Minesweeper.Cell
 import Minesweeper.Board
 import Minesweeper.Difficulty
@@ -11,9 +15,9 @@ import Minesweeper.Difficulty
 playTurn :: String -> Board -> (Int, Int) -> Board
 playTurn action board coord =
   case action of
-    "uncover" ->  uncover board coord
-    "flag"    ->  flag board coord
-    otherwise ->  unflag board coord
+    "uncover" ->  uncover board (getCell board coord)
+    "flag"    ->  flag board (getCell board coord)
+    otherwise ->  unflag board (getCell board coord)
 
 isWin :: Board -> Bool
 isWin board = all (\x -> if (revealed x) then (not (hasMine x)) else (hasMine x)) (getAllCells board)
@@ -22,34 +26,29 @@ isLose :: Board -> Bool
 isLose board = any (\x -> (hasMine x) && (revealed x)) (getAllCells board)
 
 -- sub actions
-flag :: Board -> (Int, Int) -> Board
-flag board coord = replaceCell board coord newCell
-  where newCell = (getCell board coord) { flagged = True }
+flag :: Board -> Cell -> Board
+flag board cell = replaceCell board (cellCoords cell) newCell
+  where newCell = cell { flagged = True }
 
-unflag :: Board -> (Int, Int) -> Board
-unflag board coord = replaceCell board coord newCell
-  where newCell = (getCell board coord) { flagged = False }
+unflag :: Board -> Cell -> Board
+unflag board cell = replaceCell board (cellCoords cell) newCell
+  where newCell = cell { flagged = False }
 
-uncover :: Board -> (Int, Int) -> Board
-uncover board coord = finalBoard
+uncover :: Board -> Cell -> Board
+uncover board cell = finalBoard
   where
-    finalBoard = if ((numberMines == 0) && (not (revealed oldCell)))
-      then propagateUncover replacedBord coord
+    finalBoard = if ((numberMines == 0) && (not (revealed cell)))
+      then propagateUncover replacedBord cell
       else replacedBord
-    replacedBord = replaceCell board coord newCell
-    numberMines = adjacentMines oldCell
-    newCell = oldCell { revealed = True }
-    oldCell = getCell board coord
+    replacedBord = replaceCell board (cellCoords cell) newCell
+    numberMines = adjacentMines cell
+    newCell = cell { revealed = True }
+
+applyToCells :: Board -> (Board -> Cell -> Board) -> [Cell] -> Board
+applyToCells board _ [] = board
+applyToCells board f (x:xs) = f board' x
+  where board' = applyToCells board f xs
 
 -- uncover helpers
-propagateUncover :: Board -> (Int, Int) -> Board
-propagateUncover board coord = uncoverListCells board adjacentCells
-  where
-    adjacentCells = listOfAdjacentTiles coord (length (board!!0)) (length board)
-
-uncoverListCells :: Board -> [(Int, Int)] -> Board
-uncoverListCells board [] = board
-uncoverListCells board (coord:coords) = newBoard
-  where
-    newBoard = uncover modifiedBoard coord
-    modifiedBoard = uncoverListCells board coords
+propagateUncover :: Board -> Cell -> Board
+propagateUncover board cell = applyToCells board uncover (getAdjacentCells board cell)

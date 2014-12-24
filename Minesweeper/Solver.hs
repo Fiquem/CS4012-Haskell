@@ -8,48 +8,50 @@ import Minesweeper.Difficulty
 import Minesweeper.Game
 
 autoMove :: Board -> Difficulty -> Board
-autoMove board difficulty = simpleCountHiddenFlaggedList board (revealedCoords)
-  where revealedCoords = getRevealedCoords board
+autoMove board difficulty = 
+  if fst result
+    then snd result
+    else board -- uncover board (head $ getUnrevealedCells board) -- reveal next unrevealed cell
+  where result = makeSafeMove board
 
--- Solver can only use revealed tiles
-getRevealedCoords :: Board -> [(Int, Int)]
-getRevealedCoords board = filtered
+makeSafeMove :: Board -> (Bool, Board)
+makeSafeMove board = attemptOneSafeMove board (getRevealedCells board) 
+
+attemptOneSafeMove :: Board -> [Cell] -> (Bool, Board)
+attemptOneSafeMove board [] = (False, board)
+attemptOneSafeMove board (x:xs) = 
+  if fst result
+    then result
+    else attemptOneSafeMove board xs -- didn't find a safe move let's continue looking
+  where result = flagToAdjacent board x
+
+uncoverAdjacent :: Board -> Cell -> (Bool, Board)
+uncoverAdjacent board cell =
+  if (count == 0)
+    then (True, uncover board $ head unmarked)
+    else (False, board)
   where
-    filtered = filter (\x -> revealed (getCell board x)) allCellCoords
-    allCellCoords = allPossibleBoardPositions (length (board!!0)) (length board)
+    count = length flagged
+    unmarked = unmarkedAdjacentCells board cell
+    flagged = flaggedAdjacentCells board cell
 
--- Simple solver than counts adjacent hidden tiles and 
-simpleCountHiddenFlaggedList :: Board -> [(Int, Int)] -> Board
-simpleCountHiddenFlaggedList board [] = board
-simpleCountHiddenFlaggedList board (coord:coords) = board''
-  where
-    board'' = simpleCountHiddenFlagged board' coord
-    board' = simpleCountHiddenFlaggedList board coords
-
-simpleCountHiddenFlagged :: Board -> (Int, Int) -> Board
-simpleCountHiddenFlagged board coord = newBoard
+flagToAdjacent :: Board -> Cell -> (Bool, Board)
+flagToAdjacent board cell =
+  if (count <= (adjacentMines cell)) && (count > 0)
+    then (True, flag board $ head unmarked) -- apply only one move flag
+    else (False, board)
   where 
-    newBoard = flagMultiple board coords
-    coords = if nahf == (adjacentMines (getCell board coord)) then filterAdjacentCoordsHiddenOrFlagged board coord else []
-    nahf = countNumberAdjacentHiddenOrFlagged board coord
+    count = length unmarked
+    unmarked = unmarkedAdjacentCells board cell
 
-flagMultiple :: Board -> [(Int, Int)] -> Board
-flagMultiple board [] = board
-flagMultiple board (coord:coords) = board''
-  where
-    board'' = playTurn "flag" board' coord
-    board' = flagMultiple board coords
+unmarkedAdjacentCells :: Board -> Cell -> [Cell]
+unmarkedAdjacentCells board cell = filter (\x -> ((not $ revealed x) || (not $ flagged x))) $ getAdjacentCells board cell
 
-countNumberAdjacentHiddenOrFlagged :: Board -> (Int, Int) -> Int
-countNumberAdjacentHiddenOrFlagged board coord = count
-  where
-    count = sum (map (\x -> if ((not (revealed x)) || (flagged x)) then 1 else 0) adjacentCells)
-    adjacentCells = getCells board adjacentCellsCoords
-    adjacentCellsCoords = listOfAdjacentTiles coord (length (board!!0)) (length board)
+flaggedAdjacentCells :: Board -> Cell -> [Cell]
+flaggedAdjacentCells board cell = filter (\x -> flagged x) $ getAdjacentCells board cell
 
-filterAdjacentCoordsHiddenOrFlagged :: Board -> (Int, Int) -> [(Int , Int)]
-filterAdjacentCoordsHiddenOrFlagged board coord = filtered
-  where
-    filtered = filter (\x -> (not (revealed (getCell board x))) || (flagged (getCell board x))) adjacentCellsCoords
-    adjacentCellsCoords = listOfAdjacentTiles coord (length (board!!0)) (length board)
+getRevealedCells :: Board -> [Cell]
+getRevealedCells board = filter (\x -> revealed x) (getAllCells board)
 
+getUnrevealedCells :: Board -> [Cell]
+getUnrevealedCells board = filter (\x -> not $ revealed x) (getAllCells board)

@@ -4,6 +4,7 @@ data Cell = Cell { hasMine :: Bool
                  , flagged :: Bool
                  , revealed :: Bool
                  , adjacentMines :: Int
+                 , cellCoords :: (Int, Int)
                  }
 
 instance Show Cell where
@@ -24,4 +25,5 @@ createCell = Cell { hasMine = False
                   , flagged = False
                   , revealed = False
                   , adjacentMines = 0
+                  , cellCoords = (-1, -1)
                   }

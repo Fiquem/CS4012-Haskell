@@ -1,4 +1,6 @@
-module Minesweeper.Minesweeper where
+module Minesweeper.Minesweeper (
+  playGame
+) where
 
 import System.Random
 
