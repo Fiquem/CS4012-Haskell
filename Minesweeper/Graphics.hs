@@ -1,7 +1,7 @@
 {-
     OK, so GHCi and Windows and WXHaskell don't work nicely together
     so this is module Main
-    I compile from directory above: "ghc Minesweeper/Graphics.hs"
+    I compile from root directory (above the current one): "ghc Minesweeper/Graphics.hs"
     and I run by "Minesweeper/Graphics.exe"
 -}
 
@@ -13,6 +13,7 @@ import Minesweeper.Game
 import Minesweeper.Difficulty
 import Minesweeper.Board
 import Minesweeper.Cell
+import Minesweeper.Solver
 import Graphics.UI.WX
 import Graphics.UI.WXCore hiding (Row)
 
@@ -71,7 +72,7 @@ playingTheGame board difficulty txtA txtB txtC = do
     change2 <- button f [text := txtC, on command := (close f >> playingTheGame board difficulty txtC txtA txtB)]
     
     -- solver currently unavailable
-    --autoplay <- button f [text := "AutoPlay", on command := (close f >> checkResult (playMove board revealedBoard difficulty) difficulty)]
+    autoplay <- button f [text := "AutoPlay", on command := (close f >> checkResult (autoMove board difficulty) difficulty)]
     
     --Build Board
     buttons <- buildboard f p txtA difficulty board
@@ -85,7 +86,7 @@ playingTheGame board difficulty txtA txtB txtC = do
             
     set f [layout := column 0 $
                 [floatCentre $ widget p
-                , (floatBottom $ row 3 [widget changemode, widget change2{-, widget autoplay-}])
+                , (floatBottom $ row 3 [widget changemode, widget change2, widget autoplay])
                 ]   
                 ,clientSize := sz 500 400
             ]
@@ -102,7 +103,7 @@ getButton :: Frame () -> Panel () -> String -> Difficulty -> Board -> Int -> (In
 getButton f p txt difficulty board rownumber (colnumber,cell) = 
     smallButton p [
                     text := show cell
-                    ,on command := (close f >> checkResult (playTurn txt board (colnumber, rownumber)) difficulty)
+                    ,on command := (close f >> checkResult (playTurn txt board (rownumber, colnumber)) difficulty)
                     ]
                     
 checkResult :: Board -> Difficulty -> IO ()
