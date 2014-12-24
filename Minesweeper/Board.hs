@@ -4,9 +4,11 @@ module Minesweeper.Board (
   showBoard,
   showTrueBoard,
   getCell,
+  getCells,
   getAllCells,
   replaceCell,
-  listOfAdjacentTiles
+  listOfAdjacentTiles,
+  allPossibleBoardPositions
 ) where
 
 import Data.List
